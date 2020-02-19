@@ -14,9 +14,7 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#  This makefile is more or less generic.
-#  The configuration is on `sources.mk`.
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#  This makefile is generic.
 
 # D I R E C T O R I E S -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 prefix ?= /usr/local
@@ -43,14 +41,16 @@ V := $(shell [ -z $(VERBOSE) ] && echo @)
 Q := $(shell [ -z $(QUIET) ] && echo @ || echo @true)
 
 # C O M M A N D S -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-CROSS_COMPILE ?= $(CROSS)
-AS := $(CROSS_COMPILE)as
-AR := $(CROSS_COMPILE)ar
-CC := $(CROSS_COMPILE)gcc
-CXX := $(CROSS_COMPILE)g++
-LD := $(CROSS_COMPILE)ld
-NM := $(CROSS_COMPILE)nm
-INSTALL := install
+AS ?= $(CROSS)as
+AR ?= $(CROSS)ar
+CC ?= $(CROSS)gcc
+CXX ?= $(CROSS)g++
+LD ?= $(CROSS)ld
+LDC ?= $(CC)
+LDCX ?= $(CXX)
+NM ?= nm
+INSTALL ?= install
+
 ASM_EXT := s
 
 DATE := $(shell date '+%Y-%m-%d')

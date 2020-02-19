@@ -14,14 +14,19 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-#  This makefile is more or less generic.
-#  The configuration is on `sources.mk`.
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+#  This makefile is generic.
+#
 define fn_objs
 	$(patsubst $(topdir)/%.c,$(outdir)/%.o,$(patsubst $(topdir)/%.$(ASM_EXT),$(outdir)/%.o,$($(1))))
 endef
 define fn_deps
-	$(patsubst $(topdir)/%.c,$(outdir)/%.d,$($(1)))
+	$(patsubst $(topdir)/%.c,$(outdir)/%.d,$(patsubst $(topdir)/%.$(ASM_EXT),,$($(1))))
+endef
+define fn_inst
+	$(patsubst $(gendir)/%,$(prefix)/%,$(1))
+endef
+define fn_flcp
+	$(patsubst $(topdir)/%,$(prefix)/%,$(1))
 endef
 
 $(outdir)/%.o: $(topdir)/%.c
@@ -35,7 +40,7 @@ $(outdir)/%.d: $(topdir)/%.c
 	$(V) $(CC) -M -o $@ $< $(CFLAGS)
 
 define link_shared
-LIBS += lib$(1)
+LIBS += $(libdir)/lib$(1).so
 lib$(1): $(libdir)/lib$(1).so
 install-lib$(1): $(prefix)/lib/lib$(1).so
 $(libdir)/lib$(1).so: $(call fn_objs,$(2)-y)
@@ -45,13 +50,13 @@ $(libdir)/lib$(1).so: $(call fn_objs,$(2)-y)
 endef
 
 define link_bin
-BINS += $(1)
+BINS += $(bindir)/$(1)
 $(1): $(bindir)/$(1)
 install-$(1): $(prefix)/bin/$(1)
 $(bindir)/$(1): $(call fn_objs,$(2)-y)
 	$(S) mkdir -p $$(dir $$@)
-	$(Q) echo "   LD  $$@"
-	$(V) $(CC) -o $$@ $$^ $($(3))
+	$(Q) echo "    LD  $$@"
+	$(V) $(LDC) -o $$@ $$^ $($(3))
 endef
 
 clean:
@@ -61,13 +66,14 @@ clean:
 
 $(prefix)/lib/%: $(libdir)/%
 	$(S) mkdir -p $(dir $@)
+	$(Q) echo "    INSTALL  $@"
 	$(V) $(INSTALL) $< $@
 
 $(prefix)/bin/%: $(bindir)/%
 	$(S) mkdir -p $(dir $@)
+	$(Q) echo "    INSTALL  $@"
 	$(V) $(INSTALL) $< $@
 
 
 .PHONY: clean
-
 
