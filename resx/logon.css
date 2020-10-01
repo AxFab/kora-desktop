@@ -1,0 +1,122 @@
+
+/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+/* Container */
+.panel {
+    background: #dedede;
+}
+
+
+.panel-image {
+    background: #2f2f2f;
+}
+
+.panel-name {
+    background: #f2f2f2;
+    color:black;
+    font-size:13;
+    font-family: arial;
+}
+
+.panel-name:over {
+    background: #10a6a6;
+    font-size:13;
+    font-family: arial;
+}
+
+.panel-psword {
+    background: #f2f2f2;
+    font-size:13;
+    font-family: arial;
+}
+
+.panel-psword:over {
+    background: #10a6a6;
+    font-size:13;
+    font-family: arial;
+}
+
+.psword {
+	text-align: left;
+	color: black;
+    font-size:13;
+    font-family: arial;
+}
+
+.button {
+    background: #f2f2f2;
+    font-size:13;
+    font-family: arial;
+    color:black;
+}
+
+.button:over {
+    background: #10a6a6;
+    font-size:13;
+    font-family: arial;
+}
+
+.submit {
+	background: #1010a6;
+    font-size: 18;
+    font-family: fa;
+}
+
+.submit:over {
+	background: #10a6a6;
+    font-size: 18;
+    font-family: fa;
+}
+
+.label {
+	color: white;
+    font-size:18;
+    font-family: arial;
+}
+
+.label:over {
+	background : white;
+    font-size:18;
+    font-family: arial;
+}
+
+
+.labeli {
+	color: white;
+	font-size: 18;
+	font-family: fa;
+}
+
+.labeli:over {
+	background : white;
+	color: black;
+	font-size: 18;
+	font-family: fa;
+}
+
+
+
+.menu {
+  background: #a6a6a6;
+  border-color: #454545;
+  inner-color: #c2c2c2;
+}
+.menuVRuler {
+  background: #42a5f5;
+  width: 1px;
+}
+.menuDivider {
+  background: #545454;
+}
+.menuItem {
+}
+.menuItem:over {
+  background: #c2c2c2;
+}
+.menuLabel {
+  text-align: left;
+  color: #323232;
+}
+.menuLabel2 {
+  text-align: right;
+  color: #323232;
+}

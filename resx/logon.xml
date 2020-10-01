@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<panel min-width="320px" min-height="220px" width="wrap" height="wrap" img="./resx/wallpaper.png">
+
+    <group top="0" right="0" height="30dp" layout="HGroupMiddle" gap="10dp" padding="5dp">
+        <label id="btn-lang" text="En" solid="true" padding="5dp"/>
+        <labeli id="btn-net" text=" : " solid="true" padding="5dp"/>
+        <labeli id="btn-vol" text=" x " solid="true" padding="5dp"/>
+        <label id="btn-clock" text="13:38" solid="true" padding="5dp"/>
+        <labeli id="btn-acc" text="&xf094;" solid="true" padding="5dp"/>
+        <labeli id="btn-pwr" text=" m " solid="true" padding="5dp"/>
+    </group>
+
+    <group horizontal-center="0" vertical-center="0" layout="VGroupCenter" gap="40dp">
+        <group layout="HGroupTop" id="users" gap="40dp" height="230dp">
+            <group id="user" layout="VGroupLeft" width="150dp" solid="true" >
+                <panel-image id="img" width="150dp" height="150dp" substyle="true" />
+                <panel-name id="usr" width="150dp" height="40dp" substyle="true" />
+                <panel-psword id="hid" width="150dp" height="40dp" substyle="true" hidden="true">
+                    <psword id="pwd" editable="true" text="" height="wrap" left="5dp" right="40dp" />
+                    <submit id="go" height="30dp" vertical-center="0" right="5dp" width="30dp" solid="true" />
+                </panel-psword>
+            </group>
+        </group>
+        <panel width="340dp" height="40dp" >
+            <button left="0" width="50%" height="wrap" text="Log in as guest" solid="true" />
+            <button right="0" width="50%" height="wrap" text="Manage users" solid="true" />
+        </panel>
+    </group>
+
+
+    <menu id="ctx-lang" padding-top="3px" padding-bottom="3px" padding-left="1px" padding-right="1px">
+        <menuVRuler left="25px" top="0" bottom="0" width="1px" />
+        <group width="wrap" height="wrap" layout="VGroupExtend" >
+
+            <menuItem height="20px" padding="2px" solid="true">
+                <menuIco left="3px" width="16px" height="wrap" />
+                <menuLabel left="28px" right="0" height="wrap" text="English"/>
+            </menuItem>
+
+            <menuItem height="20px" padding="2px" solid="true">
+                <menuIco left="3px" width="16px" height="wrap" />
+                <menuLabel left="28px" right="0" height="wrap" text="Francais"/>
+            </menuItem>
+
+            <menuItem height="20px" padding="2px" solid="true">
+                <menuIco left="3px" width="16px" height="wrap" />
+                <menuLabel left="28px" right="0" height="wrap" text="Espanol"/>
+            </menuItem>
+        </group>
+    </menu>
+
+</panel>

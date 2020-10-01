@@ -1,5 +1,5 @@
-#      This file is part of the SmokeOS project.
-#  Copyright (C) 2015  <Fabien Bavent>
+#      This file is part of the KoraOS project.
+#  Copyright (C) 2018  <Fabien Bavent>
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as
@@ -22,41 +22,42 @@ gendir ?= $(shell pwd)
 
 include $(topdir)/make/global.mk
 
-all: $(bindir)/desktop
+all: bins
 
-DISTO=kora
+CFLAGS ?= -Wall -Wextra -Wno-unused-parameter -ggdb
+CFLAGS += -fPIC
+CFLAGS += -fno-builtin
+ifeq ($(target_os),kora)
+CFLAGS += -Dmain=_main -D_GNU_SOURCE
+endif
 
-SRCS-y += $(wildcard $(srcdir)/*.c)
-SRCS-y += $(wildcard $(srcdir)/lgfx/*.c)
-SRCS-y += $(wildcard $(srcdir)/lgfx/$(DISTO)/*.c)
+include $(topdir)/make/build.mk
 
-OBJS-y = $(patsubst $(srcdir)/%.c,$(outdir)/%.o,$(SRCS-y))
 
-CFLAGS += -I $(topdir)/lgfx/include
-CFLAGS += -I $(topdir)/lgfx/$(DISTO)
-CFLAGS +=  -ggdb
-CFLAGS += -Dmain=_main
+CFLAGS += $(shell $(PKC) --cflags lgfx freetype)
+LFLAGS += $(shell $(PKC) --libs lgfx freetype) -lm
 
-ifeq ($(DISTO),x11)
-LFLAGS += -lpthread -lX11
-else ifeq ($(DISTO),bmp)
+ifeq ($(DISTO),linux)
 LFLAGS += -lpthread
 else ifeq ($(DISTO),kora)
 CFLAGS += -Dmain=_main
 endif
 
-$(bindir)/desktop: $(OBJS-y)
-	$(S) mkdir -p $(dir $@)
-	$(Q) echo "    LD $@"
-	$(V) $(CC) -o $@ $^ $(LFLAGS)
 
-$(outdir)/%.o: $(srcdir)/%.c
-	$(S) mkdir -p $(dir $@)
-	$(Q) echo "    CC $@"
-	$(V) $(CC) -c -o $@ $< $(CFLAGS)
+# src_logon-y = $(wildcard $(srcdir)/logon/*.c)
+# $(eval $(call link_bin,logon,src_logon))
+
+src_winmgr-y = $(wildcard $(srcdir)/winmgr/*.c)
+$(eval $(call link_bin,winmgr,src_winmgr,LFLAGS))
 
 
-clean:
-	$(V) rm -rf $(bindir) $(libdir) $(outdir)
+install: $(call fn_inst,$(BINS) $(LIBS))
 
+bins: $(BINS)
+
+SRCS-y += src_winmgr-y
+
+ifeq ($(NODEPS),)
+-include $(call fn_deps,SRCS-y)
+endif
 
