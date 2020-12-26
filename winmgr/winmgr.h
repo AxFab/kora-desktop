@@ -9,7 +9,7 @@
 #include <kora/llist.h>
 
 
-// #define __USE_FT
+// #define __USE_FT 1
 
 
 enum {
@@ -84,18 +84,18 @@ struct window {
     int w, h;
     int fpos;
     int cursor;
-    gfx_t* win;
+    gfx_t *win;
     uint32_t color;
     llnode_t node;
-    app_t* app;
+    app_t *app;
 };
 
 struct app {
-    char* name;
+    char *name;
     uint32_t color;
     llnode_t node;
     int order;
-    window_t* win;
+    window_t *win;
 };
 
 struct menu {
@@ -117,29 +117,29 @@ struct menu {
     int font_face;
     float font_size;
 
-    bool (*click)(menu_t*, int);
+    bool (*click)(menu_t *, int);
 };
 
 struct mitem {
     llnode_t node;
     uint32_t color;
-    char* text;
-    void* data;
+    char *text;
+    void *data;
 };
 
 
 struct winmgr {
-    gfx_t* screen;
+    gfx_t *screen;
     gfx_seat_t seat;
-    
+
     mtx_t lock; // BIG FAT LOCK !
 
     llhead_t win_list;
     llhead_t app_list;
 
-    window_t* win_active;
-    window_t* win_over;
-    window_t* win_grab;
+    window_t *win_active;
+    window_t *win_over;
+    window_t *win_grab;
 
     int cursorIdx;
 
@@ -153,8 +153,8 @@ struct winmgr {
 
     bool show_menu;
 
-    gfx_t* wallpaper;
-    gfx_t* cursors[CRS_MAX];
+    gfx_t *wallpaper;
+    gfx_t *cursors[CRS_MAX];
 
 
     menu_t task_menu;
@@ -180,26 +180,26 @@ extern struct winmgr _;
 #define GFX_POINT_RD(x,y,v)  do { x=(v)&0x7fff; y=((v)>>16)&0x7fff; } while(0)
 
 
-void gr_shadow(gfx_t* screen, gfx_clip_t* rect, int size, int alpha);
-void gr_write(gfx_t* screen, int face, float sizeInPts, const char* str, gfx_clip_t* clip, uint32_t color, int flags);
+void gr_shadow(gfx_t *screen, gfx_clip_t *rect, int size, int alpha);
+void gr_write(gfx_t *screen, int face, float sizeInPts, const char *str, gfx_clip_t *clip, uint32_t color, int flags);
 
 
-void menu_paint(gfx_t* screen, menu_t* menu);
-bool menu_mouse(menu_t* menu, int x, int y, bool looking);
-void menu_button(menu_t* menu, int btn, bool press);
-void menu_config(menu_t* menu);
+void menu_paint(gfx_t *screen, menu_t *menu);
+bool menu_mouse(menu_t *menu, int x, int y, bool looking);
+void menu_button(menu_t *menu, int btn, bool press);
+void menu_config(menu_t *menu);
 
 void window_create();
-void window_fast_move(window_t* win, int key);
-void window_position(window_t* win, gfx_clip_t* rect);
-void window_emit(window_t* win, int type, unsigned param);
-void window_focus(window_t* win);
+void window_fast_move(window_t *win, int key);
+void window_position(window_t *win, gfx_clip_t *rect);
+void window_emit(window_t *win, int type, unsigned param);
+void window_focus(window_t *win);
 
 void mgr_invalid_screen(int x, int y, int w, int h);
-void mgr_paint(gfx_t* screen);
-void mgr_mouse_motion(gfx_msg_t* msg);
-void mgr_mouse_btn_down(gfx_msg_t* msg);
-void mgr_mouse_btn_up(gfx_msg_t* msg);
+void mgr_paint(gfx_t *screen);
+void mgr_mouse_motion(gfx_msg_t *msg);
+void mgr_mouse_btn_down(gfx_msg_t *msg);
+void mgr_mouse_btn_up(gfx_msg_t *msg);
 
 void config_loading();
 

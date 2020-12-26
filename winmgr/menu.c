@@ -1,6 +1,6 @@
 #include "winmgr.h"
 
-void menu_paint(gfx_t* screen, menu_t* menu)
+void menu_paint(gfx_t *screen, menu_t *menu)
 {
     gfx_fill(screen, menu->bg_color, menu->bg_color >= 0x1000000 ? GFX_UPPER_BLEND : GFX_NOBLEND, &menu->box);
     if (menu->shadow)
@@ -8,7 +8,7 @@ void menu_paint(gfx_t* screen, menu_t* menu)
 
     int i = 0;
     int x = 0;
-    mitem_t* item;
+    mitem_t *item;
     for ll_each(&menu->list, item, mitem_t, node) {
 
         gfx_clip_t box;
@@ -51,7 +51,7 @@ void menu_paint(gfx_t* screen, menu_t* menu)
     }
 }
 
-bool menu_mouse(menu_t* menu, int x, int y, bool looking)
+bool menu_mouse(menu_t *menu, int x, int y, bool looking)
 {
     if (!looking || x < menu->box.left || y < menu->box.top || x >= menu->box.right || y >= menu->box.bottom) {
         menu->idx_over = -1;
@@ -76,14 +76,13 @@ bool menu_mouse(menu_t* menu, int x, int y, bool looking)
     return true;
 }
 
-void menu_button(menu_t* menu, int btn, bool press)
+void menu_button(menu_t *menu, int btn, bool press)
 {
     if (menu->idx_over < 0)
         return;
 
-    if (btn == 1 && press) {
+    if (btn == 1 && press)
         menu->idx_grab = menu->idx_over;
-    }
     else if (btn == 1) {
         if (menu->idx_grab == menu->idx_over && menu->idx_grab >= 0) {
             bool activate = menu->click != NULL && menu->click(menu, menu->idx_over);
@@ -99,7 +98,7 @@ void menu_button(menu_t* menu, int btn, bool press)
     }
 }
 
-void menu_config(menu_t* menu)
+void menu_config(menu_t *menu)
 {
     menu->bg_color = 0x343434;
     menu->bg1_color = 0x4c4c4c; // Over

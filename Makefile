@@ -47,7 +47,7 @@ endif
 # src_logon-y = $(wildcard $(srcdir)/logon/*.c)
 # $(eval $(call link_bin,logon,src_logon))
 
-src_winmgr-y = $(wildcard $(srcdir)/winmgr/*.c)
+src_winmgr = $(wildcard $(srcdir)/winmgr/*.c)
 $(eval $(call link_bin,winmgr,src_winmgr,LFLAGS))
 
 
@@ -55,9 +55,9 @@ install: $(call fn_inst,$(BINS) $(LIBS))
 
 bins: $(BINS)
 
-SRCS-y += src_winmgr-y
+SRCS += src_winmgr
 
 ifeq ($(NODEPS),)
--include $(call fn_deps,SRCS-y)
+-include $(call fn_deps,SRCS)
 endif
 

@@ -4,7 +4,7 @@
 
 #define RESIZE_MARGE 5
 
-const char* month[] = {
+const char *month[] = {
     "JAN", "FEV", "MAR", "APR",
     "MAY", "JUN", "JUL", "AUG",
     "SEP", "OCT", "NOV", "DEC"
@@ -16,7 +16,7 @@ void mgr_invalid_screen(int x, int y, int w, int h)
     gfx_invalid(_.screen);
 }
 
-void mgr_paint_clock(gfx_t* screen)
+void mgr_paint_clock(gfx_t *screen)
 {
     char tmp[12];
     time_t now = time(NULL);
@@ -81,13 +81,15 @@ void mgr_paint(gfx_t *screen)
     mtx_unlock(&_.lock);
 
     if (_.show_menu) {
-        // Start Menu 
+        // Start Menu
         menu_paint(screen, &_.start_menu);
     }
 
     // Task bar
     menu_paint(screen, &_.task_menu);
-    // mgr_paint_clock(screen);
+#ifdef __USE_FT
+    mgr_paint_clock(screen);
+#endif
 
     gfx_clip_t clkClip;
     clkClip.left = 0;
@@ -109,9 +111,9 @@ void mgr_paint(gfx_t *screen)
     gfx_blit(screen, cursor, GFX_CLRBLEND, &mseClip, NULL);
 }
 
-void mgr_mouse_motion(gfx_msg_t *msg) 
+void mgr_mouse_motion(gfx_msg_t *msg)
 {
-    window_t* win = NULL;
+    window_t *win = NULL;
 
     mgr_invalid_screen(_.seat.mouse_x - _.seat.rel_x - 64, _.seat.mouse_y - _.seat.rel_y - 64, 128, 128);
     mgr_invalid_screen(_.seat.mouse_x - 64, _.seat.mouse_y - 64, 128, 128);
@@ -141,39 +143,31 @@ void mgr_mouse_motion(gfx_msg_t *msg)
                         _.cursorIdx = CRS_RESIZE_NW;
                         _.resizeMode = RCT_LEFT | RCT_TOP;
 
-                    }
-                    else if (rect.bottom < _.seat.mouse_y) {
+                    } else if (rect.bottom < _.seat.mouse_y) {
                         _.cursorIdx = CRS_RESIZE_SW;
                         _.resizeMode = RCT_LEFT | RCT_BOTTOM;
-                    }
-                    else {
+                    } else {
                         _.cursorIdx = CRS_RESIZE_W;
                         _.resizeMode = RCT_LEFT;
                     }
-                }
-                else if (rect.right < _.seat.mouse_x) {
+                } else if (rect.right < _.seat.mouse_x) {
                     if (rect.top >= _.seat.mouse_y) {
                         _.cursorIdx = CRS_RESIZE_NE;
                         _.resizeMode = RCT_RIGHT | RCT_TOP;
-                    }
-                    else if (rect.bottom < _.seat.mouse_y) {
+                    } else if (rect.bottom < _.seat.mouse_y) {
                         _.cursorIdx = CRS_RESIZE_SE;
                         _.resizeMode = RCT_RIGHT | RCT_BOTTOM;
-                    }
-                    else {
+                    } else {
                         _.cursorIdx = CRS_RESIZE_E;
                         _.resizeMode = RCT_RIGHT;
                     }
-                }
-                else if (rect.top >= _.seat.mouse_y) {
+                } else if (rect.top >= _.seat.mouse_y) {
                     _.cursorIdx = CRS_RESIZE_N;
                     _.resizeMode = RCT_TOP;
-                }
-                else if (rect.bottom < _.seat.mouse_y) {
+                } else if (rect.bottom < _.seat.mouse_y) {
                     _.cursorIdx = CRS_RESIZE_S;
                     _.resizeMode = RCT_BOTTOM;
-                }
-                else {
+                } else {
                     _.cursorIdx = _.win_active != NULL ? _.win_active->cursor : CRS_DEFAULT;
                     _.resizeMode = 0;
                 }
@@ -219,8 +213,7 @@ void mgr_mouse_motion(gfx_msg_t *msg)
             gfx_map(_.win_grab->win);
             gfx_fill(_.win_grab->win, _.win_grab->color, GFX_NOBLEND, NULL);
             window_emit(_.win_over, GFX_EV_RESIZE, GFX_POINT(_.win_grab->w, _.win_grab->h));
-        }
-        else {
+        } else {
             _.win_grab->x = _.grabInitX + dispX;
             _.win_grab->y = _.grabInitY + dispY;
             window_emit(_.win_over, GFX_EV_DISPLACMENT, 0);
@@ -247,14 +240,13 @@ void mgr_mouse_motion(gfx_msg_t *msg)
     window_emit(win, GFX_EV_MOUSEMOVE, msg->param1);
 }
 
-void mgr_mouse_btn_down(gfx_msg_t* msg)
+void mgr_mouse_btn_down(gfx_msg_t *msg)
 {
     if (_.show_menu)
         menu_button(&_.start_menu, msg->param1, true);
     menu_button(&_.task_menu, msg->param1, true);
-    if (_.win_over != NULL && _.win_over != _.win_active) {
+    if (_.win_over != NULL && _.win_over != _.win_active)
         window_focus(_.win_over);
-    }
     if (msg->param1 == 1) {
         _.win_grab = _.win_over;
         if (_.win_grab != NULL) {
@@ -269,7 +261,7 @@ void mgr_mouse_btn_down(gfx_msg_t* msg)
     // printf("Mouse btn down (%d)\n", msg.param1);
 }
 
-void mgr_mouse_btn_up(gfx_msg_t * msg)
+void mgr_mouse_btn_up(gfx_msg_t *msg)
 {
     bool close_menu = false;
     if (_.show_menu) {
@@ -281,9 +273,8 @@ void mgr_mouse_btn_up(gfx_msg_t * msg)
     if (close_menu)
         _.show_menu = false;
 
-    if (msg->param1 == 1) {
+    if (msg->param1 == 1)
         _.win_grab = NULL;
-    }
     // printf("Mouse btn up (%d)\n", msg.param1);
 
 }

@@ -16,7 +16,7 @@ int fast_move[][4] = {
     { WSZ_ANGLE_BL, WSZ_RIGHT, WSZ_ANGLE_TR, WSZ_BOTTOM }, // BR
 };
 
-const char* eventName[] = {
+const char *eventName[] = {
     "0",
     "Mouse-motion",
     "2",
@@ -72,7 +72,7 @@ const char* eventName[] = {
 
 void window_create()
 {
-    window_t* win = malloc(sizeof(window_t));
+    window_t *win = malloc(sizeof(window_t));
     win->id = ++win_ID;
     win->pid = 0;
     win->shm = 0;
@@ -87,7 +87,7 @@ void window_create()
     gfx_map(win->win);
     gfx_fill(win->win, win->color, GFX_NOBLEND, NULL);
 
-    app_t* app = malloc(sizeof(app_t));
+    app_t *app = malloc(sizeof(app_t));
     app->color = win->color;
     win->app = app;
     app->win = win; // TODO -- Multiple window per application !?
@@ -110,19 +110,17 @@ void window_create()
     window_focus(win);
 }
 
-void window_fast_move(window_t* win, int key)
+void window_fast_move(window_t *win, int key)
 {
-    gfx_t* screen = _.screen;
+    gfx_t *screen = _.screen;
     int pos = -1;
     if (key == 75) {
         printf("Move to left\n");
         pos = fast_move[win->fpos][0];
-    }
-    else if (key == 77) {
+    } else if (key == 77) {
         printf("Move to right\n");
         pos = fast_move[win->fpos][1];
-    }
-    else if (key == 72)
+    } else if (key == 72)
         pos = fast_move[win->fpos][2];
     else if (key == 80)
         pos = fast_move[win->fpos][3];
@@ -161,9 +159,9 @@ void window_fast_move(window_t* win, int key)
     gfx_fill(win->win, win->color, GFX_NOBLEND, NULL);
 }
 
-void window_position(window_t* win, gfx_clip_t* rect)
+void window_position(window_t *win, gfx_clip_t *rect)
 {
-    gfx_t* screen = _.screen;
+    gfx_t *screen = _.screen;
     switch (win->fpos) {
     case WSZ_MAXIMIZED:
         rect->left = 0;
@@ -229,7 +227,7 @@ void window_position(window_t* win, gfx_clip_t* rect)
     }
 }
 
-void window_emit(window_t* win, int type, unsigned param)
+void window_emit(window_t *win, int type, unsigned param)
 {
     if (win == NULL)
         return;
@@ -239,7 +237,7 @@ void window_emit(window_t* win, int type, unsigned param)
         printf("Gfx event [%p] %s (%x)\n", win, type < 50 ? eventName[type] : "Unknown", param);
 }
 
-void window_focus(window_t* win)
+void window_focus(window_t *win)
 {
     mtx_lock(&_.lock);
     ll_remove(&_.win_list, &win->node);

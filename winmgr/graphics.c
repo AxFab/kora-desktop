@@ -3,10 +3,10 @@
 
 #define BUFSIZE 512
 
-int unichar(const char** txt)
+int unichar(const char **txt)
 {
-    const char* str = *txt;
-    int charcode = ((unsigned char*)str)[0];
+    const char *str = *txt;
+    int charcode = ((unsigned char *)str)[0];
     str++;
 
     if (charcode & 0x80) { // mbstring !
@@ -14,34 +14,28 @@ int unichar(const char** txt)
         if (charcode >= 0xFF) {
             charcode = 0; // 8
             lg = 0; // 7 x 6 => 42bits
-        }
-        else if (charcode >= 0xFE) {
+        } else if (charcode >= 0xFE) {
             charcode = 0; // 7
             lg = 0; // 6 x 6 => 36bits
-        }
-        else if (charcode >= 0xFC) {
+        } else if (charcode >= 0xFC) {
             charcode &= 0x1; // 6
             lg = 5; // 5 x 6 + 1 => 31bits
-        }
-        else if (charcode >= 0xF8) {
+        } else if (charcode >= 0xF8) {
             charcode &= 0x3; // 5
             lg = 4; // 4 x 6 + 2 => 26bits
-        }
-        else if (charcode >= 0xF0) {
+        } else if (charcode >= 0xF0) {
             charcode &= 0x07; // 4
             lg = 3; // 3 x 6 + 3 => 21bits
-        }
-        else if (charcode >= 0xE0) {
+        } else if (charcode >= 0xE0) {
             charcode &= 0x0F; // 3
             lg = 2; // 2 x 6 + 4 => 16bits
-        }
-        else if (charcode >= 0xC0) {
+        } else if (charcode >= 0xC0) {
             charcode &= 0x1F; // 2
             lg = 1; // 6 + 5 => 11bits
         }
 
         while (lg-- > 0) {
-            charcode = charcode << 6 | ((unsigned char*)str)[0] & 0x3f;
+            charcode = charcode << 6 | ((unsigned char *)str)[0] & 0x3f;
             str++;
         }
     }
@@ -59,7 +53,7 @@ FT_Library library; /* handle to library */
 FT_Error fterror;
 FT_Face fontFaces[16];
 
-int ft_box(FT_Face face, const char* str)
+int ft_box(FT_Face face, const char *str)
 {
     // memset(clip, 0, sizeof(*clip));
     int width = 0, yBearing = 0, yLower = 0;
@@ -83,7 +77,7 @@ int ft_box(FT_Face face, const char* str)
     return width;
 }
 
-void ft_write(gfx_t* screen, FT_Face face, float sizeInPts, const char* str, gfx_clip_t* clip, uint32_t color, int flags)
+void ft_write(gfx_t *screen, FT_Face face, float sizeInPts, const char *str, gfx_clip_t *clip, uint32_t color, int flags)
 {
     int dpi = 96;
     int sizeInPx = (sizeInPts * dpi) / 96;
@@ -93,9 +87,8 @@ void ft_write(gfx_t* screen, FT_Face face, float sizeInPts, const char* str, gfx
     color = color & 0xffffff;
     int x = clip->left + (clip->right - clip->left - width) / 2;
     int y = clip->top + sizeInPx + (clip->bottom - (clip->top + sizeInPx)) / 2;
-    if (flags & RCT_LEFT) {
+    if (flags & RCT_LEFT)
         x = clip->left;
-    }
 
     FT_GlyphSlot slot = face->glyph;
 
@@ -127,9 +120,9 @@ void ft_write(gfx_t* screen, FT_Face face, float sizeInPts, const char* str, gfx
 
 }
 
-#endif 
+#endif
 
-static void gr_shadow_corner(gfx_t* screen, int size, int sx, int ex, int sy, int ey, int mx, int my, int alpha)
+static void gr_shadow_corner(gfx_t *screen, int size, int sx, int ex, int sy, int ey, int mx, int my, int alpha)
 {
     for (int i = sy; i < ey; ++i)
         for (int j = sx; j < ex; ++j) {
@@ -144,9 +137,9 @@ static void gr_shadow_corner(gfx_t* screen, int size, int sx, int ex, int sy, in
         }
 }
 
-void gr_shadow(gfx_t* screen, gfx_clip_t* rect, int size, int alpha)
+void gr_shadow(gfx_t *screen, gfx_clip_t *rect, int size, int alpha)
 {
-    int* grad = malloc((size + 1) * sizeof(int));
+    int *grad = malloc((size + 1) * sizeof(int));
     for (int i = 0; i < size + 1; ++i)
         grad[i] = (1.0 - sqrt(i / (float)size)) * (float)alpha;
 
@@ -196,7 +189,7 @@ void gr_shadow(gfx_t* screen, gfx_clip_t* rect, int size, int alpha)
     free(grad);
 }
 
-void gr_write(gfx_t* screen, int face, float sizeInPts, const char* str, gfx_clip_t* clip, uint32_t color, int flags)
+void gr_write(gfx_t *screen, int face, float sizeInPts, const char *str, gfx_clip_t *clip, uint32_t color, int flags)
 {
 #if defined __USE_FT
     ft_write(screen, fontFaces[face], sizeInPts, str, clip, color, flags);
@@ -205,20 +198,19 @@ void gr_write(gfx_t* screen, int face, float sizeInPts, const char* str, gfx_cli
 }
 
 
-bool on_click_start(menu_t* menu, int idx)
+bool on_click_start(menu_t *menu, int idx)
 {
     window_create();
     return false;
 }
 
-bool on_click_task(menu_t* menu, int idx)
+bool on_click_task(menu_t *menu, int idx)
 {
     if (idx == 0) {
         _.show_menu = !_.show_menu;
         mgr_invalid_screen(0, 0, 0, 0);
-    }
-    else {
-        app_t* app = ll_index(&_.app_list, idx - 1, app_t, node);
+    } else {
+        app_t *app = ll_index(&_.app_list, idx - 1, app_t, node);
         if (app != NULL)
             window_focus(app->win);
     }
@@ -231,9 +223,9 @@ void config_loading()
     char buffer[BUFSIZE];
 
 #ifndef main
-    const char* RESX = "./resx";
+    const char *RESX = "./resx";
 #else
-    const char* RESX = "/mnt/cdrom/usr/resx";
+    const char *RESX = "/mnt/cdrom/usr/resx";
 #endif
 
 #if defined __USE_FT
@@ -310,7 +302,7 @@ void config_loading()
 
     // User settings loading...
     snprintf(buffer, BUFSIZ, "%s/%s", RESX, "wallpaper.png");
-    gfx_t* loadWallpaper = gfx_load_image(buffer);
+    gfx_t *loadWallpaper = gfx_load_image(buffer);
     if (loadWallpaper != NULL) {
         _.wallpaper = gfx_create_surface(_.screen->width, _.screen->height);
         gfx_map(_.wallpaper);
@@ -333,10 +325,10 @@ void config_loading()
     _.start_menu.gap = 2;
     _.start_menu.click = on_click_start;
 
-    mitem_t* item;
+    mitem_t *item;
 
     snprintf(buffer, BUFSIZ, "%s/%s", RESX, "apps.cfg");
-    FILE* fp = fopen(buffer, "r");
+    FILE *fp = fopen(buffer, "r");
     if (fp != NULL) {
         char buf[512];
         while (fgets(buf, 512, fp)) {

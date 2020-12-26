@@ -49,8 +49,7 @@ int main()
             mgr_paint(_.screen);
             gfx_flip(_.screen);
             continue;
-        }
-        else if (msg.message == GFX_EV_TIMER)
+        } else if (msg.message == GFX_EV_TIMER)
             continue;
 
 
