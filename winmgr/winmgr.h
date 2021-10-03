@@ -5,11 +5,11 @@
 #include <threads.h>
 #include <string.h>
 #include <stdio.h>
-#include <kora/mcrs.h>
-#include <kora/llist.h>
+#include "mcrs.h"
+#include "llist.h"
 
 
-// #define __USE_FT 1
+#define __USE_FT 1
 
 
 enum {
@@ -56,7 +56,7 @@ enum {
 // Fonts
 enum {
     FNT_DEFAULT,
-    FNT_ICON,
+    FNT_ICON = 4,
 };
 
 #define BORDER_SHADOW_SIZE 3
@@ -130,7 +130,7 @@ struct mitem {
 
 struct winmgr {
     gfx_t *screen;
-    gfx_seat_t seat;
+    gfx_seat_t *seat;
 
     mtx_t lock; // BIG FAT LOCK !
 
@@ -150,6 +150,7 @@ struct winmgr {
     int grabInitY;
     int grabInitW;
     int grabInitH;
+    bool invalid;
 
     bool show_menu;
 
@@ -201,6 +202,6 @@ void mgr_mouse_motion(gfx_msg_t *msg);
 void mgr_mouse_btn_down(gfx_msg_t *msg);
 void mgr_mouse_btn_up(gfx_msg_t *msg);
 
-void config_loading();
+void config_loading(const char *resx);
 
 #endif /* _WINMGR_H */

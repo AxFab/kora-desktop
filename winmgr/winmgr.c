@@ -13,7 +13,7 @@ const char *month[] = {
 void mgr_invalid_screen(int x, int y, int w, int h)
 {
     // TODO -- Keep track of what to redraw !
-    gfx_invalid(_.screen);
+    _.invalid = true;
 }
 
 void mgr_paint_clock(gfx_t *screen)
@@ -87,9 +87,7 @@ void mgr_paint(gfx_t *screen)
 
     // Task bar
     menu_paint(screen, &_.task_menu);
-#ifdef __USE_FT
     mgr_paint_clock(screen);
-#endif
 
     gfx_clip_t clkClip;
     clkClip.left = 0;
@@ -104,67 +102,69 @@ void mgr_paint(gfx_t *screen)
     gfx_t *cursor = _.cursors[_.cursorIdx];
     if (cursor == NULL)
         cursor = _.cursors[0];
-    mseClip.left = _.seat.mouse_x - cursor->width / 2;
-    mseClip.right = _.seat.mouse_x + cursor->width / 2;
-    mseClip.bottom = _.seat.mouse_y + cursor->height / 2;
-    mseClip.top = _.seat.mouse_y - cursor->height / 2;
-    gfx_blit(screen, cursor, GFX_CLRBLEND, &mseClip, NULL);
+    if (cursor != NULL) {
+        mseClip.left = _.seat->mouse_x - cursor->width / 2;
+        mseClip.right = _.seat->mouse_x + cursor->width / 2;
+        mseClip.bottom = _.seat->mouse_y + cursor->height / 2;
+        mseClip.top = _.seat->mouse_y - cursor->height / 2;
+        gfx_blit(screen, cursor, GFX_CLRBLEND, &mseClip, NULL);
+    }
 }
 
 void mgr_mouse_motion(gfx_msg_t *msg)
 {
     window_t *win = NULL;
 
-    mgr_invalid_screen(_.seat.mouse_x - _.seat.rel_x - 64, _.seat.mouse_y - _.seat.rel_y - 64, 128, 128);
-    mgr_invalid_screen(_.seat.mouse_x - 64, _.seat.mouse_y - 64, 128, 128);
+    mgr_invalid_screen(_.seat->mouse_x - _.seat->rel_x - 64, _.seat->mouse_y - _.seat->rel_y - 64, 128, 128);
+    mgr_invalid_screen(_.seat->mouse_x - 64, _.seat->mouse_y - 64, 128, 128);
 
     bool looking = true;
     if (_.show_menu)
-        looking = !menu_mouse(&_.start_menu, _.seat.mouse_x, _.seat.mouse_y, looking);
-    looking = !menu_mouse(&_.task_menu, _.seat.mouse_x, _.seat.mouse_y, looking);
+        looking = !menu_mouse(&_.start_menu, _.seat->mouse_x, _.seat->mouse_y, looking);
+    looking = !menu_mouse(&_.task_menu, _.seat->mouse_x, _.seat->mouse_y, looking);
 
     if (looking) {
         mtx_lock(&_.lock);
         for ll_each_reverse(&_.win_list, win, window_t, node) {
             gfx_clip_t rect;
             window_position(win, &rect);
-            if (rect.left >= _.seat.mouse_x + RESIZE_MARGE)
+            if (rect.left >= _.seat->mouse_x + RESIZE_MARGE)
                 continue;
-            if (rect.top >= _.seat.mouse_y + RESIZE_MARGE)
+            if (rect.top >= _.seat->mouse_y + RESIZE_MARGE)
                 continue;
-            if (rect.right < _.seat.mouse_x - RESIZE_MARGE)
+            if (rect.right < _.seat->mouse_x - RESIZE_MARGE)
                 continue;
-            if (rect.bottom < _.seat.mouse_y - RESIZE_MARGE)
+            if (rect.bottom < _.seat->mouse_y - RESIZE_MARGE)
                 continue;
 
             if (_.win_grab == NULL) {
-                if (rect.left >= _.seat.mouse_x) {
-                    if (rect.top >= _.seat.mouse_y) {
+                if (rect.left >= _.seat->mouse_x) {
+                    if (rect.top >= _.seat->mouse_y) {
                         _.cursorIdx = CRS_RESIZE_NW;
                         _.resizeMode = RCT_LEFT | RCT_TOP;
 
-                    } else if (rect.bottom < _.seat.mouse_y) {
+                    } else if (rect.bottom < _.seat->mouse_y) {
                         _.cursorIdx = CRS_RESIZE_SW;
                         _.resizeMode = RCT_LEFT | RCT_BOTTOM;
                     } else {
                         _.cursorIdx = CRS_RESIZE_W;
                         _.resizeMode = RCT_LEFT;
                     }
-                } else if (rect.right < _.seat.mouse_x) {
-                    if (rect.top >= _.seat.mouse_y) {
+                } else if (rect.right < _.seat->mouse_x) {
+                    if (rect.top >= _.seat->mouse_y) {
                         _.cursorIdx = CRS_RESIZE_NE;
                         _.resizeMode = RCT_RIGHT | RCT_TOP;
-                    } else if (rect.bottom < _.seat.mouse_y) {
+                    } else if (rect.bottom < _.seat->mouse_y) {
                         _.cursorIdx = CRS_RESIZE_SE;
                         _.resizeMode = RCT_RIGHT | RCT_BOTTOM;
                     } else {
                         _.cursorIdx = CRS_RESIZE_E;
                         _.resizeMode = RCT_RIGHT;
                     }
-                } else if (rect.top >= _.seat.mouse_y) {
+                } else if (rect.top >= _.seat->mouse_y) {
                     _.cursorIdx = CRS_RESIZE_N;
                     _.resizeMode = RCT_TOP;
-                } else if (rect.bottom < _.seat.mouse_y) {
+                } else if (rect.bottom < _.seat->mouse_y) {
                     _.cursorIdx = CRS_RESIZE_S;
                     _.resizeMode = RCT_BOTTOM;
                 } else {
@@ -185,8 +185,8 @@ void mgr_mouse_motion(gfx_msg_t *msg)
     }
 
     if (_.win_grab != NULL) {
-        int dispX = _.seat.mouse_x - _.mouseGrabX;
-        int dispY = _.seat.mouse_y - _.mouseGrabY;
+        int dispX = _.seat->mouse_x - _.mouseGrabX;
+        int dispY = _.seat->mouse_y - _.mouseGrabY;
         mgr_invalid_screen(_.win_grab->x - BORDER_SHADOW_SIZE, _.win_grab->y - BORDER_SHADOW_SIZE, _.win_grab->w + BORDER_SHADOW_SIZE * 2, _.win_grab->h + BORDER_SHADOW_SIZE * 2);
 
         if (_.resizeMode != 0) {
@@ -250,8 +250,8 @@ void mgr_mouse_btn_down(gfx_msg_t *msg)
     if (msg->param1 == 1) {
         _.win_grab = _.win_over;
         if (_.win_grab != NULL) {
-            _.mouseGrabX = _.seat.mouse_x;
-            _.mouseGrabY = _.seat.mouse_y;
+            _.mouseGrabX = _.seat->mouse_x;
+            _.mouseGrabY = _.seat->mouse_y;
             _.grabInitX = _.win_grab->x;
             _.grabInitY = _.win_grab->y;
             _.grabInitW = _.win_grab->w;

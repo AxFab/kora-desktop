@@ -44,83 +44,8 @@ int unichar(const char **txt)
     return charcode;
 }
 
-#if defined __USE_FT
+gfx_font_t *fontFaces[16];
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
-FT_Library library; /* handle to library */
-FT_Error fterror;
-FT_Face fontFaces[16];
-
-int ft_box(FT_Face face, const char *str)
-{
-    // memset(clip, 0, sizeof(*clip));
-    int width = 0, yBearing = 0, yLower = 0;
-
-
-    FT_GlyphSlot slot = face->glyph;
-    while (*str) {
-        int charcode = unichar(&str);
-
-        FT_UInt glyph_index = FT_Get_Char_Index(face, charcode);
-        fterror = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
-
-        yBearing = MAX(yBearing, slot->metrics.horiBearingY);
-        yLower = MIN(yLower, slot->metrics.horiBearingY - slot->metrics.height);
-
-        width += slot->advance.x >> 6;
-    }
-
-    yBearing = yBearing >> 6;
-    yLower = yLower >> 6;
-    return width;
-}
-
-void ft_write(gfx_t *screen, FT_Face face, float sizeInPts, const char *str, gfx_clip_t *clip, uint32_t color, int flags)
-{
-    int dpi = 96;
-    int sizeInPx = (sizeInPts * dpi) / 96;
-    fterror = FT_Set_Char_Size(face, 0, (int)(sizeInPts * 64.0f)/* 1/64th pts*/, dpi, dpi);
-
-    int width = ft_box(face, str);
-    color = color & 0xffffff;
-    int x = clip->left + (clip->right - clip->left - width) / 2;
-    int y = clip->top + sizeInPx + (clip->bottom - (clip->top + sizeInPx)) / 2;
-    if (flags & RCT_LEFT)
-        x = clip->left;
-
-    FT_GlyphSlot slot = face->glyph;
-
-    ft_box(face, str);
-
-    while (*str) {
-        int charcode = unichar(&str);
-
-        FT_UInt glyph_index = FT_Get_Char_Index(face, charcode);
-        fterror = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
-        // face->glyph->metrics
-        fterror = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
-
-        // Draw
-        for (int i = 0; i < slot->bitmap.rows; ++i) {
-            int py = y - slot->bitmap_top + i;
-            for (int j = 0; j < slot->bitmap.width; ++j) {
-                int px = x + slot->bitmap_left + j;
-                int a = slot->bitmap.buffer[i * slot->bitmap.pitch + j];
-                if (a > 0)
-                    screen->pixels4[py * screen->width + px] = gfx_upper_alpha_blend(screen->pixels4[py * screen->width + px], color | (a << 24));
-            }
-        }
-
-        x += slot->advance.x >> 6;
-        y += slot->advance.y >> 6; /* not useful for now */
-    }
-
-
-}
-
-#endif
 
 static void gr_shadow_corner(gfx_t *screen, int size, int sx, int ex, int sy, int ey, int mx, int my, int alpha)
 {
@@ -191,10 +116,16 @@ void gr_shadow(gfx_t *screen, gfx_clip_t *rect, int size, int alpha)
 
 void gr_write(gfx_t *screen, int face, float sizeInPts, const char *str, gfx_clip_t *clip, uint32_t color, int flags)
 {
-#if defined __USE_FT
-    ft_write(screen, fontFaces[face], sizeInPts, str, clip, color, flags);
-#else
-#endif
+    if (face == 0 && sizeInPts == 20)
+        face = 2;
+    else if (face == 0 && sizeInPts == 14)
+        face = 1;
+    gfx_font_t* font = fontFaces[face];
+    gfx_text_metrics_t m;
+    gfx_mesure_text(font, str, &m);
+    int w = clip->right - clip->left;
+    int h = clip->bottom - clip->top;
+    gfx_write(screen, font, str, color, clip->left + (w - m.width) / 2, clip->top + (h - m.height) / 2 + m.baseline * 1.25, clip);
 }
 
 
@@ -218,69 +149,62 @@ bool on_click_task(menu_t *menu, int idx)
     return false;
 }
 
-void config_loading()
+void config_loading(const char *resx)
 {
     char buffer[BUFSIZE];
 
-#ifndef main
-    const char *RESX = "./resx";
-#else
-    const char *RESX = "/mnt/cdrom/usr/resx";
-#endif
-
-#if defined __USE_FT
     // Font loading...
-    fterror = FT_Init_FreeType(&library);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "fonts/arial.ttf");
-    fterror = FT_New_Face(library, buffer, 0, &fontFaces[FNT_DEFAULT]);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "fonts/fa5-solid-900.otf");
-    fterror = FT_New_Face(library, buffer, 0, &fontFaces[FNT_ICON]);
-#endif
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "fonts/arial.ttf");
+    fontFaces[FNT_DEFAULT] = gfx_font("Arial", 10, 0);
+    fontFaces[FNT_DEFAULT + 1] = gfx_font("Arial", 14, 0);
+    fontFaces[FNT_DEFAULT + 2] = gfx_font("Arial", 20, 0);
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "fonts/fa5-solid-900.otf");
+    fontFaces[FNT_ICON] = gfx_font("Font Awesome", 20, 0);
 
     // Mouse cursor loading...
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/default.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/default.bmp");
     _.cursors[CRS_DEFAULT] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/pointer.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/pointer.bmp");
     _.cursors[CRS_POINTER] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/wait.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/wait.bmp");
     _.cursors[CRS_WAIT] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/move.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/move.bmp");
     _.cursors[CRS_MOVE] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/text.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/text.bmp");
     _.cursors[CRS_TEXT] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/help.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/help.bmp");
     _.cursors[CRS_HELP] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/progress.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/progress.bmp");
     _.cursors[CRS_PROGRESS] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/not-allowed.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/not-allowed.bmp");
     _.cursors[CRS_NOT_ALLOWED] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/n-resize.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/n-resize.bmp");
     _.cursors[CRS_RESIZE_N] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/s-resize.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/s-resize.bmp");
     _.cursors[CRS_RESIZE_S] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/e-resize.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/e-resize.bmp");
     _.cursors[CRS_RESIZE_E] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/w-resize.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/w-resize.bmp");
     _.cursors[CRS_RESIZE_W] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/ne-resize.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/ne-resize.bmp");
     _.cursors[CRS_RESIZE_NE] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/sw-resize.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/sw-resize.bmp");
     _.cursors[CRS_RESIZE_SW] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/nw-resize.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/nw-resize.bmp");
     _.cursors[CRS_RESIZE_NW] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/se-resize.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/se-resize.bmp");
     _.cursors[CRS_RESIZE_SE] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/col-resize.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/col-resize.bmp");
     _.cursors[CRS_RESIZE_COL] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/row-resize.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/row-resize.bmp");
     _.cursors[CRS_RESIZE_ROW] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/all-scroll.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/all-scroll.bmp");
     _.cursors[CRS_ALL_SCROLL] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/crosshair.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/crosshair.bmp");
     _.cursors[CRS_CROSSHAIR] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/drop.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/drop.bmp");
     _.cursors[CRS_DROP] = gfx_load_image(buffer);
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "cursors/no-drop.bmp");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "cursors/no-drop.bmp");
     _.cursors[CRS_NODROP] = gfx_load_image(buffer);
 
     // Application synchronization loading
@@ -291,17 +215,19 @@ void config_loading()
 
     // Display loading...
 #ifndef main
-    _.screen = gfx_create_window(NULL, _16x10(720), 720);
+    // int w = 480;
+    int w = 780;
+    // int w = 1080;
+    _.screen = gfx_create_window(NULL, _16x10(w), w, 0);
 #else
-    int fb0 = open("/fb0", O_RDWR);
-    int kdb = open("/kdb", O_RDONLY);
-    _.screen = gfx_opend(fb0, kdb);
+    _.screen = gfx_open_surface("/dev/fb0");
+    // gfx_open_input("/dev/kbd");
 #endif
-    gfx_keyboard_load(&_.seat);
-
+    _.seat = _.screen->seat;
+    // gfx_keyboard_load(&_.seat); TODO -- Change keyboard layout!?
 
     // User settings loading...
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "wallpaper.png");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "wallpaper.png");
     gfx_t *loadWallpaper = gfx_load_image(buffer);
     if (loadWallpaper != NULL) {
         _.wallpaper = gfx_create_surface(_.screen->width, _.screen->height);
@@ -327,7 +253,7 @@ void config_loading()
 
     mitem_t *item;
 
-    snprintf(buffer, BUFSIZ, "%s/%s", RESX, "apps.cfg");
+    snprintf(buffer, BUFSIZ, "%s/%s", resx, "apps.cfg");
     FILE *fp = fopen(buffer, "r");
     if (fp != NULL) {
         char buf[512];
@@ -358,7 +284,7 @@ void config_loading()
     item->text = NULL;
     ll_append(&_.task_menu.list, &item->node);
 
-
+    gfx_timer(20, 20);
 }
 
 

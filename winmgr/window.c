@@ -129,7 +129,7 @@ void window_fast_move(window_t *win, int key)
         return;
 
     win->fpos = pos;
-    gfx_invalid(screen);
+    mgr_invalid_screen(0, 0, screen->width, screen->height);
     switch (win->fpos) {
     case WSZ_MAXIMIZED:
         gfx_resize(win->win, screen->width, screen->height - 50);
@@ -240,12 +240,14 @@ void window_emit(window_t *win, int type, unsigned param)
 void window_focus(window_t *win)
 {
     mtx_lock(&_.lock);
+    if (_.win_active)
+        mgr_invalid_screen(_.win_active->x, _.win_active->y, _.win_active->w, _.win_active->h);
     ll_remove(&_.win_list, &win->node);
     _.win_active = win;
     ll_append(&_.win_list, &win->node);
     // UPDATE !?
     _.task_menu.idx_active = win->app->order;
     mtx_unlock(&_.lock);
-    gfx_invalid(_.screen);
+    mgr_invalid_screen(_.win_active->x, _.win_active->y, _.win_active->w, _.win_active->h);
 }
 
