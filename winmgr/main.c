@@ -1,97 +1,56 @@
+/*
+ *      This file is part of the KoraOS project.
+ *  Copyright (C) 2015-2019  <Fabien Bavent>
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as
+ *  published by the Free Software Foundation, either version 3 of the
+ *  License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *   - - - - - - - - - - - - - - -
+ */
+#include "wns.h"
 #include <keycodes.h>
 #include "winmgr.h"
+#include <sys/mman.h>
 
 struct winmgr _;
 
-//void service(void* arg) {
-//
-//    int sock = -1;
-//    struct sockaddr_in addr;
-//    addr.sin_family = AF_INET;
-//    addr.sin_addr.s_addr = INADDR_ANY;
-//    addr.sin_port = htons(1842);
-//
-//    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-//    bind(sock, &addr, sizeof(addr));
-//    listen(sock, 5);
-//
-//    for (;;) {
-//        gfx_win_pack_t pack;
-//        recv(sock, &pack, sizeof(pack), 0);
-//
-//        printf("Command received\n");
-//        mtx_lock(&BFL);
-//
-//        struct window* win = malloc(sizeof(struct window));
-//        win->pid = pack.pid;
-//        win->shm = pack.shm;
-//        int fd = // OPEN SHM !!
-//        // win->win = gfx_opend();
-//
-//        mtx_unlock(&BFL);
-//    }
-//
-//}
-
-int main()
+void screens_loading()
 {
     memset(&_, 0, sizeof(_));
-    config_loading("H:/kora/sources/desktop/resx");
+    mtx_init(&_.lock, mtx_plain);
+
+    // Display loading...
 #ifndef main
-    // config_loading("./resx");
+    int w = 780; //  480 / 1080
+    gfx_context("win32");
+    _.screen = gfx_create_window(_16x10(w), w);
 #else
-    // config_loading("/mnt/cdrom/usr/resx");
+    _.screen = gfx_open_surface("/dev/fb0");
+    // gfx_open_input("/dev/kbd");
 #endif
+    _.seat = _.screen->seat;
+    // gfx_keyboard_load(&_.seat); TODO -- Change keyboard layout!?
 
-    gfx_msg_t msg;
-    for (;;) {
-        gfx_poll(&msg);
-        gfx_handle(&msg);
-        switch (msg.message) {
+    gfx_timer(20, 20);
+}
 
-        case GFX_EV_QUIT:
-            gfx_destroy(_.screen);
-            return 0;
-
-        case GFX_EV_TIMER:
-            if (_.invalid) {
-                gfx_map(_.screen);
-                mgr_paint(_.screen);
-                gfx_flip(_.screen);
-                _.invalid = false;
-            }
-            break;
-
-        case GFX_EV_MOUSEMOVE:
-            mgr_mouse_motion(&msg);
-            break;
-
-        case GFX_EV_MOUSEWHEEL:
-            printf("Mouse wheel (%d)\n", msg.param1);
-            break;
-
-        case GFX_EV_BTNUP:
-            mgr_mouse_btn_up(&msg);
-            break;
-
-        case GFX_EV_BTNDOWN:
-            mgr_mouse_btn_down(&msg);
-            break;
-
-        case GFX_EV_KEYDOWN:
-            // 16 - Q
-            if (msg.param1 == 30) // A
-                window_create();
-            else if (msg.param1 == 31)
-                _.win_active->cursor = (_.win_active->cursor + 1) % CRS_MAX;
-            else if (_.seat->kdb_status == KMOD_LCTRL && _.win_active != NULL)
-                window_fast_move(_.win_active, msg.param1);
-            printf("Key down (%d . %o)\n", msg.param1, _.seat->kdb_status);
-            break;
-
-        case GFX_EV_KEYUP:
-            printf("Key up (%d . %o)\n", msg.param1, _.seat->kdb_status);
-            break;
-        }
-    }
+int main(int argc, char **argv)
+{
+    thrd_t th_srv, th_resx;
+    screens_loading();
+    thrd_create(&th_resx, (thrd_start_t)resx_loading, NULL);
+    thrd_create(&th_srv, (thrd_start_t)wns_service, NULL);
+    event_loop();
+    gfx_destroy(_.screen);
+    return 0;
 }

@@ -1,117 +1,29 @@
-﻿#include <keycodes.h>
-#include <time.h>
+/*
+ *      This file is part of the KoraOS project.
+ *  Copyright (C) 2015-2019  <Fabien Bavent>
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as
+ *  published by the Free Software Foundation, either version 3 of the
+ *  License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *   - - - - - - - - - - - - - - -
+ */
 #include "winmgr.h"
+#include <keycodes.h>
+#include <threads.h>
 
 #define RESIZE_MARGE 5
 
-const char *month[] = {
-    "JAN", "FEV", "MAR", "APR",
-    "MAY", "JUN", "JUL", "AUG",
-    "SEP", "OCT", "NOV", "DEC"
-};
-
-void mgr_invalid_screen(int x, int y, int w, int h)
-{
-    // TODO -- Keep track of what to redraw !
-    _.invalid = true;
-}
-
-void mgr_paint_clock(gfx_t *screen)
-{
-    char tmp[12];
-    time_t now = time(NULL);
-    struct tm nowTm;
-#ifndef main
-    localtime_s(&nowTm, &now);
-#else
-    gmtime_r(&nowTm, &now);
-#endif
-
-    // Print Clock
-    gfx_clip_t dtDay;
-    dtDay.left = screen->width - 42;
-    dtDay.right = screen->width - 10;
-    dtDay.top = screen->height - 50;
-    dtDay.bottom = screen->height;
-    snprintf(tmp, 12, "%02d", nowTm.tm_mday);
-    gr_write(screen, FNT_DEFAULT, 20, tmp, &dtDay, 0xffffff, 0);
-
-    gfx_clip_t dtMon;
-    dtMon.left = screen->width - 74;
-    dtMon.right = screen->width - 42;
-    dtMon.top = screen->height - 40;
-    dtMon.bottom = screen->height - 25;
-    gr_write(screen, FNT_DEFAULT, 10, month[nowTm.tm_mon], &dtMon, 0xffffff, 0);
-
-    gfx_clip_t dtYear;
-    dtYear.left = screen->width - 74;
-    dtYear.right = screen->width - 42;
-    dtYear.top = screen->height - 25;
-    dtYear.bottom = screen->height - 10;
-    snprintf(tmp, 12, "%02d", nowTm.tm_year + 1900);
-    gr_write(screen, FNT_DEFAULT, 10, tmp, &dtYear, 0xffffff, 0);
-
-    gfx_clip_t clkClip;
-    clkClip.left = screen->width - 140;
-    clkClip.right = screen->width - 100;
-    clkClip.bottom = screen->height;
-    clkClip.top = screen->height - 50;
-    snprintf(tmp, 12, "%02d:%02d", nowTm.tm_hour, nowTm.tm_min);
-    gr_write(screen, FNT_DEFAULT, 20, tmp, &clkClip, 0xffffff, 0);
-}
-
-void mgr_paint(gfx_t *screen)
-{
-    // Background color / wallpaper
-    if (_.wallpaper == NULL)
-        gfx_fill(screen, 0xf3e4c6, GFX_NOBLEND, NULL);
-    else
-        gfx_blit(screen, _.wallpaper, GFX_NOBLEND, NULL, NULL);
-
-    // Windows
-    mtx_lock(&_.lock);
-    window_t *win;
-    for ll_each(&_.win_list, win, window_t, node) {
-        gfx_clip_t winClip;
-        window_position(win, &winClip);
-        gfx_map(win->win);
-        gfx_blit(screen, win->win, GFX_NOBLEND, &winClip, NULL);
-        gr_shadow(screen, &winClip, BORDER_SHADOW_SIZE, 140);
-    }
-    mtx_unlock(&_.lock);
-
-    if (_.show_menu) {
-        // Start Menu
-        menu_paint(screen, &_.start_menu);
-    }
-
-    // Task bar
-    menu_paint(screen, &_.task_menu);
-    mgr_paint_clock(screen);
-
-    gfx_clip_t clkClip;
-    clkClip.left = 0;
-    clkClip.right = 50;
-    clkClip.bottom = screen->height;
-    clkClip.top = screen->height - 50;
-    gr_write(screen, FNT_ICON, 20, "\xef\x80\x82", &clkClip, 0xffffff, 0);
-
-
-    // Mouse
-    gfx_clip_t mseClip;
-    gfx_t *cursor = _.cursors[_.cursorIdx];
-    if (cursor == NULL)
-        cursor = _.cursors[0];
-    if (cursor != NULL) {
-        mseClip.left = _.seat->mouse_x - cursor->width / 2;
-        mseClip.right = _.seat->mouse_x + cursor->width / 2;
-        mseClip.bottom = _.seat->mouse_y + cursor->height / 2;
-        mseClip.top = _.seat->mouse_y - cursor->height / 2;
-        gfx_blit(screen, cursor, GFX_CLRBLEND, &mseClip, NULL);
-    }
-}
-
-void mgr_mouse_motion(gfx_msg_t *msg)
+void event_motion(gfx_msg_t *msg)
 {
     window_t *win = NULL;
 
@@ -208,10 +120,6 @@ void mgr_mouse_motion(gfx_msg_t *msg)
                 _.win_grab->h = _.grabInitH + dispY;
             }
 
-            gfx_unmap(_.win_grab->win);
-            gfx_resize(_.win_grab->win, _.win_grab->w, _.win_grab->h);
-            gfx_map(_.win_grab->win);
-            gfx_fill(_.win_grab->win, _.win_grab->color, GFX_NOBLEND, NULL);
             window_emit(_.win_over, GFX_EV_RESIZE, GFX_POINT(_.win_grab->w, _.win_grab->h));
         } else {
             _.win_grab->x = _.grabInitX + dispX;
@@ -237,10 +145,20 @@ void mgr_mouse_motion(gfx_msg_t *msg)
         window_emit(_.win_over, GFX_EV_MOUSEMOVE, msg->param1);
     }
     _.win_over = win;
-    window_emit(win, GFX_EV_MOUSEMOVE, msg->param1);
+    if (win) {
+        int ms = GFX_POINT(_.seat->mouse_x - win->x, _.seat->mouse_y - win->y);
+        window_emit(win, GFX_EV_MOUSEMOVE, ms);
+    }
 }
 
-void mgr_mouse_btn_down(gfx_msg_t *msg)
+void event_wheel(gfx_msg_t *msg)
+{
+    if (_.win_over != NULL)
+        window_emit(_.win_over, GFX_EV_MOUSEWHEEL, msg->param1);
+    // printf("Mouse wheel (%d)\n", msg.param1);
+}
+
+void event_mouse_down(gfx_msg_t *msg)
 {
     if (_.show_menu)
         menu_button(&_.start_menu, msg->param1, true);
@@ -258,10 +176,12 @@ void mgr_mouse_btn_down(gfx_msg_t *msg)
             _.grabInitH = _.win_grab->h;
         }
     }
-    // printf("Mouse btn down (%d)\n", msg.param1);
+
+    if (_.win_over)
+        window_emit(_.win_over, GFX_EV_BTNDOWN, msg->param1);
 }
 
-void mgr_mouse_btn_up(gfx_msg_t *msg)
+void event_mouse_up(gfx_msg_t *msg)
 {
     bool close_menu = false;
     if (_.show_menu) {
@@ -275,6 +195,85 @@ void mgr_mouse_btn_up(gfx_msg_t *msg)
 
     if (msg->param1 == 1)
         _.win_grab = NULL;
-    // printf("Mouse btn up (%d)\n", msg.param1);
 
+    if (_.win_over)
+        window_emit(_.win_over, GFX_EV_BTNUP, msg->param1);
+}
+
+void event_keyboard_down(gfx_msg_t *msg)
+{
+    if (_.seat->kdb_status == KMOD_LCTRL && _.win_active != NULL)
+        window_fast_move(_.win_active, msg->param1);
+#if 1
+    // 16 - Q
+    else if (msg->param1 == 30) // A
+        window_create(NULL, 200, 200);
+    else if (msg->param1 == 31) // S
+        _.win_active->cursor = (_.win_active->cursor + 1) % CRS_MAX;
+#endif
+
+    if (_.win_active != NULL)
+        window_emit(_.win_active, GFX_EV_KEYDOWN, msg->param1);
+    // printf("Key down (%d . %o)\n", msg.param1, _.seat->kdb_status);
+}
+
+void event_keyboard_up(gfx_msg_t *msg)
+{
+    if (_.win_active != NULL)
+        window_emit(_.win_active, GFX_EV_KEYUP, msg->param1);
+    // printf("Key up (%d . %o)\n", msg.param1, _.seat->kdb_status);
+}
+
+void event_tick()
+{
+    wns_msg_t msg;
+    cuser_t *usr;
+    mtx_lock(&_.lock);
+    for ll_each(&_.tmr_list, usr, cuser_t, tnode) {
+        WNS_MSG(msg, WNS_TICK, usr->cnx.secret, 0, 0, 0, 0);
+        wns_send(&usr->cnx, &msg);
+    }
+    mtx_unlock(&_.lock);
+
+    // for all
+    if (_.invalid) {
+        gfx_map(_.screen);
+        mgr_paint(_.screen);
+        gfx_flip(_.screen, NULL);
+        _.invalid = false;
+    }
+}
+
+void event_loop()
+{
+    gfx_msg_t msg;
+    for (;;) {
+        gfx_poll(&msg);
+        gfx_handle(&msg);
+        switch (msg.message) {
+        case GFX_EV_QUIT:
+            return;
+        case GFX_EV_MOUSEMOVE:
+            event_motion(&msg);
+            break;
+        case GFX_EV_MOUSEWHEEL:
+            event_wheel(&msg);
+            break;
+        case GFX_EV_BTNUP:
+            event_mouse_up(&msg);
+            break;
+        case GFX_EV_BTNDOWN:
+            event_mouse_down(&msg);
+            break;
+        case GFX_EV_KEYDOWN:
+            event_keyboard_down(&msg);
+            break;
+        case GFX_EV_KEYUP:
+            event_keyboard_up(&msg);
+            break;
+        case GFX_EV_TIMER:
+            event_tick();
+            break;
+        }
+    }
 }

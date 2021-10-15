@@ -1,3 +1,22 @@
+/*
+ *      This file is part of the KoraOS project.
+ *  Copyright (C) 2015-2019  <Fabien Bavent>
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as
+ *  published by the Free Software Foundation, either version 3 of the
+ *  License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *   - - - - - - - - - - - - - - -
+ */
 #include "winmgr.h"
 
 int win_ID = 0;
@@ -70,37 +89,39 @@ const char *eventName[] = {
 };
 
 
-void window_create()
+LIBAPI gfx_t* gfx_create_wns(int width, int height, int uid);
+
+window_t *window_create(cuser_t* usr, int width, int height)
 {
+    char tmp[16];
     window_t *win = malloc(sizeof(window_t));
     win->id = ++win_ID;
-    win->pid = 0;
-    win->shm = 0;
+    win->usr = usr;
+    snprintf(tmp, 16, "wns%08x", win->id);
     win->x = 0;
     win->y = 0;
-    win->w = 200;
-    win->h = 200;
+    win->w = width;
+    win->h = height;
     win->fpos = 0;
-    win->win = gfx_create_surface(200, 200);
+    win->gfx = gfx_create_wns(width, height, win->id);
     win->color = (rand() ^ (rand() << 16)) & 0xFFFFFF;
     win->cursor = CRS_DEFAULT;
-    gfx_map(win->win);
-    gfx_fill(win->win, win->color, GFX_NOBLEND, NULL);
+    gfx_map(win->gfx);
+    gfx_fill(win->gfx, win->color, GFX_NOBLEND, NULL);
 
+    mtx_lock(&_.lock);
     app_t *app = malloc(sizeof(app_t));
     app->color = win->color;
     win->app = app;
     app->win = win; // TODO -- Multiple window per application !?
 
-    mtx_lock(&_.lock);
-    ll_append(&_.win_list, &win->node);
-    ll_append(&_.app_list, &app->node);
-
-
-    mitem_t *item = malloc(sizeof(mitem_t));
+    mitem_t* item = malloc(sizeof(mitem_t));
     item->color = win->color;
     item->text = NULL;
     item->data = app;
+
+    ll_append(&_.win_list, &win->node);
+    ll_append(&_.app_list, &app->node);
     ll_append(&_.task_menu.list, &item->node);
 
 
@@ -108,12 +129,14 @@ void window_create()
 
     mtx_unlock(&_.lock);
     window_focus(win);
+    return win;
 }
 
 void window_fast_move(window_t *win, int key)
 {
     gfx_t *screen = _.screen;
     int pos = -1;
+    mtx_lock(&_.lock);
     if (key == 75) {
         printf("Move to left\n");
         pos = fast_move[win->fpos][0];
@@ -125,38 +148,42 @@ void window_fast_move(window_t *win, int key)
     else if (key == 80)
         pos = fast_move[win->fpos][3];
 
-    if (pos < 0)
+    if (pos < 0 || win->fpos == pos) {
+        mtx_unlock(&_.lock);
         return;
+    }
 
     win->fpos = pos;
+    // TODO - better inval, use window_position instead of switch!
     mgr_invalid_screen(0, 0, screen->width, screen->height);
     switch (win->fpos) {
     case WSZ_MAXIMIZED:
-        gfx_resize(win->win, screen->width, screen->height - 50);
+        gfx_resize(win->gfx, screen->width, screen->height - 50);
         break;
     case WSZ_LEFT:
     case WSZ_RIGHT:
-        gfx_resize(win->win, screen->width / 2, screen->height - 50);
+        gfx_resize(win->gfx, screen->width / 2, screen->height - 50);
         break;
     case WSZ_TOP:
     case WSZ_BOTTOM:
-        gfx_resize(win->win, screen->width, (screen->height - 50) / 2);
+        gfx_resize(win->gfx, screen->width, (screen->height - 50) / 2);
         break;
     case WSZ_ANGLE_TL:
     case WSZ_ANGLE_TR:
     case WSZ_ANGLE_BL:
     case WSZ_ANGLE_BR:
-        gfx_resize(win->win, screen->width / 2, (screen->height - 50) / 2);
+        gfx_resize(win->gfx, screen->width / 2, (screen->height - 50) / 2);
         break;
     case WSZ_NORMAL:
     default:
-        gfx_resize(win->win, win->w, win->h);
+        gfx_resize(win->gfx, win->w, win->h);
         break;
     }
 
-    window_emit(win, GFX_EV_RESIZE, GFX_POINT(win->win->width, win->win->height));
-    gfx_map(win->win);
-    gfx_fill(win->win, win->color, GFX_NOBLEND, NULL);
+    window_emit(win, GFX_EV_RESIZE, GFX_POINT(win->gfx->width, win->gfx->height));
+    gfx_map(win->gfx);
+    gfx_fill(win->gfx, win->color, GFX_NOBLEND, NULL);
+    mtx_unlock(&_.lock);
 }
 
 void window_position(window_t *win, gfx_clip_t *rect)
@@ -229,12 +256,13 @@ void window_position(window_t *win, gfx_clip_t *rect)
 
 void window_emit(window_t *win, int type, unsigned param)
 {
-    if (win == NULL)
+    if (win == NULL || win->usr == NULL)
         return;
-    if (strlen(eventName[type]) > 3)
-        printf("Gfx event [%p] %s (%x)\n", win, type < 50 ? eventName[type] : "Unknown", param);
-    else
-        printf("Gfx event [%p] %s (%x)\n", win, type < 50 ? eventName[type] : "Unknown", param);
+    wns_msg_t msg;
+    WNS_MSG(msg, WNS_EVENT, win->usr->cnx.secret, win->id, type, param, 0);
+    wns_send(&win->usr->cnx, &msg);
+
+    printf("Gfx event [%p] %s (%x)\n", win, type < 50 ? eventName[type] : "Unknown", param);
 }
 
 void window_focus(window_t *win)

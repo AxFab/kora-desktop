@@ -1,13 +1,33 @@
+/*
+ *      This file is part of the KoraOS project.
+ *  Copyright (C) 2015-2019  <Fabien Bavent>
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as
+ *  published by the Free Software Foundation, either version 3 of the
+ *  License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *   - - - - - - - - - - - - - - -
+ */
 #ifndef _WINMGR_H
 #define _WINMGR_H 1
 
+#include <wns.h>
 #include <gfx.h>
 #include <threads.h>
 #include <string.h>
 #include <stdio.h>
 #include "mcrs.h"
 #include "llist.h"
-
+#include "hmap.h"
 
 #define __USE_FT 1
 
@@ -68,6 +88,7 @@ typedef struct window window_t;
 typedef struct app app_t;
 typedef struct menu menu_t;
 typedef struct mitem mitem_t;
+typedef struct cuser cuser_t;
 
 struct gfx_win_pack {
     int pid;
@@ -78,24 +99,32 @@ struct gfx_win_pack {
 
 struct window {
     int id;
-    int pid;
-    int shm;
+    //int pid;
+    //int shm;
     int x, y;
     int w, h;
     int fpos;
     int cursor;
-    gfx_t *win;
+    gfx_t* gfx;
     uint32_t color;
     llnode_t node;
-    app_t *app;
+    llnode_t unode;
+    app_t* app;
+    cuser_t* usr;
+};
+
+struct cuser {
+    wns_cnx_t cnx;
+    llnode_t tnode;
+    llhead_t wins;
 };
 
 struct app {
-    char *name;
+    char* name;
     uint32_t color;
     llnode_t node;
     int order;
-    window_t *win;
+    window_t* win;
 };
 
 struct menu {
@@ -117,29 +146,31 @@ struct menu {
     int font_face;
     float font_size;
 
-    bool (*click)(menu_t *, int);
+    bool (*click)(menu_t*, int);
 };
 
+// Menu items (both)
 struct mitem {
     llnode_t node;
     uint32_t color;
-    char *text;
-    void *data;
+    char* text;
+    void* data;
 };
 
 
 struct winmgr {
-    gfx_t *screen;
-    gfx_seat_t *seat;
+    gfx_t* screen;
+    gfx_seat_t* seat;
 
     mtx_t lock; // BIG FAT LOCK !
 
-    llhead_t win_list;
-    llhead_t app_list;
+    llhead_t win_list; // List of opened windows
+    llhead_t app_list; // List of connected process
+    llhead_t tmr_list; // List of timers
 
-    window_t *win_active;
-    window_t *win_over;
-    window_t *win_grab;
+    window_t* win_active;
+    window_t* win_over;
+    window_t* win_grab;
 
     int cursorIdx;
 
@@ -153,13 +184,19 @@ struct winmgr {
     bool invalid;
 
     bool show_menu;
+    bool show_cursor;
+    bool show_taskbar;
 
-    gfx_t *wallpaper;
-    gfx_t *cursors[CRS_MAX];
+    gfx_t* wallpaper;
+    gfx_t* cursors[CRS_MAX];
 
+    gfx_font_t* fontFaces[16];
 
     menu_t task_menu;
     menu_t start_menu;
+
+    mtx_t _cnx_lk;
+    hmap_t _cnx;
 };
 
 extern struct winmgr _;
@@ -177,31 +214,32 @@ extern struct winmgr _;
 #define WSZ_ANGLE_BR 9
 
 
-#define GFX_POINT(x,y)   ((x)|((y)<<16))
-#define GFX_POINT_RD(x,y,v)  do { x=(v)&0x7fff; y=((v)>>16)&0x7fff; } while(0)
+
+void gr_shadow(gfx_t* screen, gfx_clip_t* rect, int size, int alpha);
+void gr_write(gfx_t* screen, int face, float sizeInPts, const char* str, gfx_clip_t* clip, uint32_t color, int flags);
 
 
-void gr_shadow(gfx_t *screen, gfx_clip_t *rect, int size, int alpha);
-void gr_write(gfx_t *screen, int face, float sizeInPts, const char *str, gfx_clip_t *clip, uint32_t color, int flags);
+void menu_paint(gfx_t* screen, menu_t* menu);
+bool menu_mouse(menu_t* menu, int x, int y, bool looking);
+void menu_button(menu_t* menu, int btn, bool press);
+void menu_config(menu_t* menu);
 
-
-void menu_paint(gfx_t *screen, menu_t *menu);
-bool menu_mouse(menu_t *menu, int x, int y, bool looking);
-void menu_button(menu_t *menu, int btn, bool press);
-void menu_config(menu_t *menu);
-
-void window_create();
-void window_fast_move(window_t *win, int key);
-void window_position(window_t *win, gfx_clip_t *rect);
-void window_emit(window_t *win, int type, unsigned param);
-void window_focus(window_t *win);
+window_t* window_create(cuser_t* usr, int width, int height);
+void window_fast_move(window_t* win, int key);
+void window_position(window_t* win, gfx_clip_t* rect);
+void window_emit(window_t* win, int type, unsigned param);
+void window_focus(window_t* win);
 
 void mgr_invalid_screen(int x, int y, int w, int h);
-void mgr_paint(gfx_t *screen);
-void mgr_mouse_motion(gfx_msg_t *msg);
-void mgr_mouse_btn_down(gfx_msg_t *msg);
-void mgr_mouse_btn_up(gfx_msg_t *msg);
+void mgr_paint(gfx_t* screen);
 
-void config_loading(const char *resx);
+void event_loop();
+void wns_service();
+void resx_loading();
+
+void screens_loading();
+
+#define RESX "H:/kora/sources/desktop/resx"
+
 
 #endif /* _WINMGR_H */
