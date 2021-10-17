@@ -120,17 +120,19 @@ void wns_service()
 
     hmp_init(&_._cnx, 16);
 
+#ifdef _WIN32
     wns_initialize();
+#endif
     mtx_init(&_._cnx_lk, mtx_plain);
     sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock == INVALID_SOCKET) {
-        fprintf(stderr, "Could not create socket : %d\n", WSAGetLastError());
+        fprintf(stderr, "Could not create socket : %d\n", WNS_ERROR);
         return;
     }
 
     int ret = bind(sock, (void *)&server, sizeof(server));
     if (ret == SOCKET_ERROR) {
-        fprintf(stderr, "Bind failed with error code : %d\n", WSAGetLastError());
+        fprintf(stderr, "Bind failed with error code : %d\n", WNS_ERROR);
         return;
     }
 
@@ -144,7 +146,7 @@ void wns_service()
         int ret = recvfrom(sock, (char *)&msg, sizeof(msg), 0, (struct sockaddr *)&remote, &rlen);
         // printf("Get cnx %d\n", ret);
         if (ret == SOCKET_ERROR) {
-            fprintf(stderr, "recvfrom() failed with error code : %d\n", WSAGetLastError());
+            fprintf(stderr, "recvfrom() failed with error code : %d\n", WNS_ERROR);
             return;
         }
 

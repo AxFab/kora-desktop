@@ -121,11 +121,7 @@ void mgr_paint_clock(gfx_t *screen)
     char tmp[12];
     time_t now = time(NULL);
     struct tm nowTm;
-#ifndef main
-    localtime_s(&nowTm, &now);
-#else
-    gmtime_r(&nowTm, &now);
-#endif
+    localtime_r(&nowTm, &now);
 
     // Print Clock
     gfx_clip_t dtDay;

@@ -21,39 +21,50 @@ include $(topdir)/make/global.mk
 
 all: bins
 
+include $(topdir)/make/build.mk
+include $(topdir)/make/check.mk
+include $(topdir)/make/targets.mk
+
+
 CFLAGS ?= -Wall -Wextra -Wno-unused-parameter -ggdb
-CFLAGS += -fPIC
-CFLAGS += -fno-builtin
-ifeq ($(target_os),kora)
-CFLAGS += -Dmain=_main -D_GNU_SOURCE
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+CFLAGS_g += $(CFLAGS) -fPIC -fno-builtin
+
+ifneq ($(sysdir),)
+CFLAGS_g += -I$(sysdir)/include
+LFLAGS_g += -L$(sysdir)/lib
 endif
 
-include $(topdir)/make/build.mk
+LFLAGS_lg = $(LFLAGS_g) -lgfx -lpng -lz -lm
+LFLAGS_wm = $(LFLAGS_g) -lgfx -lpng -lz -lm
 
+# CFLAGS += $(shell $(PKC) --cflags lgfx freetype)
+# LFLAGS += $(shell $(PKC) --libs lgfx freetype) -lm
 
-CFLAGS += $(shell $(PKC) --cflags lgfx freetype)
-LFLAGS += $(shell $(PKC) --libs lgfx freetype) -lm
 
 ifeq ($(DISTO),linux)
-LFLAGS += -lpthread
-else ifeq ($(DISTO),kora)
-CFLAGS += -Dmain=_main
+LFLAGS_wm += -lpthread
 endif
 
 
-# src_logon-y = $(wildcard $(srcdir)/logon/*.c)
-# $(eval $(call link_bin,logon,src_logon))
+# SRCS_lg = $(wildcard $(srcdir)/logon/*.c)
+# $(eval $(call comp_source,lg,CFLAGS_g))
+# $(eval $(call link_bin,logon,SRCS_lg,LFLAGS_lg,lg))
 
-src_winmgr = $(wildcard $(srcdir)/winmgr/*.c)
-$(eval $(call link_bin,winmgr,src_winmgr,LFLAGS))
+SRCS_wm = $(wildcard $(srcdir)/winmgr/*.c)
+$(eval $(call comp_source,wm,CFLAGS_g))
+$(eval $(call link_bin,winmgr,SRCS_wm,LFLAGS_wm,wm))
 
 
 install: $(call fn_inst,$(BINS) $(LIBS))
 
 bins: $(BINS)
 
-SRCS += src_winmgr
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 ifeq ($(NODEPS),)
--include $(call fn_deps,SRCS)
+-include $(call fn_deps,SRCS_wm,wm)
+-include $(call fn_deps,SRCS_lg,lg)
 endif
