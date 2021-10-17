@@ -1,6 +1,6 @@
 /*
  *      This file is part of the KoraOS project.
- *  Copyright (C) 2015-2019  <Fabien Bavent>
+ *  Copyright (C) 2015-2021  <Fabien Bavent>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as
@@ -20,23 +20,22 @@
 #include "winmgr.h"
 
 
-bool on_click_start(menu_t* menu, int idx)
+bool on_click_start(menu_t *menu, int idx)
 {
-    mitem_t* prg = ll_index(&_.app_list, idx, mitem_t, node);
+    mitem_t *prg = ll_index(&_.app_list, idx, mitem_t, node);
 
     window_create(NULL, 200, 200);
     return false;
 }
 
-bool on_click_task(menu_t* menu, int idx)
+bool on_click_task(menu_t *menu, int idx)
 {
     if (idx == 0) {
         _.show_menu = !_.show_menu;
         mgr_invalid_screen(0, 0, 0, 0); // TODO -- Menu size
-    }
-    else {
-        mitem_t* mapp = ll_index(&_.task_menu.list, idx, mitem_t, node);
-        app_t* app = mapp->data;
+    } else {
+        mitem_t *mapp = ll_index(&_.task_menu.list, idx, mitem_t, node);
+        app_t *app = mapp->data;
         if (app != NULL)
             window_focus(app->win);
     }
@@ -45,7 +44,7 @@ bool on_click_task(menu_t* menu, int idx)
 }
 
 
-static void resx_cursor(const char* resx)
+static void resx_cursor(const char *resx)
 {
     char buffer[BUFSIZ];
 
@@ -96,11 +95,11 @@ static void resx_cursor(const char* resx)
     _.cursors[CRS_NODROP] = gfx_load_image(buffer);
 
     _.show_cursor = true;
-    gfx_t* screen = _.screen;
+    gfx_t *screen = _.screen;
     mgr_invalid_screen(0, 0, screen->width, screen->height);
 }
 
-static void resx_apps(const char* resx)
+static void resx_apps(const char *resx)
 {
     char buffer[BUFSIZ];
 
@@ -118,10 +117,10 @@ static void resx_apps(const char* resx)
     _.start_menu.gap = 2;
     _.start_menu.click = on_click_start;
 
-    mitem_t* item;
+    mitem_t *item;
 
     snprintf(buffer, BUFSIZ, "%s/%s", resx, "apps.cfg");
-    FILE* fp = fopen(buffer, "r");
+    FILE *fp = fopen(buffer, "r");
     if (fp != NULL) {
         char buf[512];
         while (fgets(buf, 512, fp)) {
@@ -153,7 +152,7 @@ static void resx_apps(const char* resx)
     ll_append(&_.task_menu.list, &item->node);
 }
 
-static void resx_fonts(const char* resx)
+static void resx_fonts(const char *resx)
 {
     char buffer[BUFSIZ];
 
@@ -166,30 +165,30 @@ static void resx_fonts(const char* resx)
     _.fontFaces[FNT_ICON] = gfx_font("Font Awesome 5 Free", 20, GFXFT_SOLID);
 
     _.show_taskbar = true;
-    gfx_t* screen = _.screen;
+    gfx_t *screen = _.screen;
     mgr_invalid_screen(0, 0, screen->width, screen->height);
 }
 
-static void resx_wallpaper(const char* resx)
+static void resx_wallpaper(const char *resx)
 {
     char buffer[BUFSIZ];
     snprintf(buffer, BUFSIZ, "%s/%s", resx, "wallpaper.png");
-    gfx_t* loadWallpaper = gfx_load_image(buffer);
+    gfx_t *loadWallpaper = gfx_load_image(buffer);
     if (loadWallpaper != NULL) {
-        gfx_t* wlp = gfx_create_surface(_.screen->width, _.screen->height);
+        gfx_t *wlp = gfx_create_surface(_.screen->width, _.screen->height);
         gfx_map(wlp);
         gfx_blit_scale(wlp, loadWallpaper, GFX_NOBLEND, NULL, NULL);
         gfx_destroy(loadWallpaper);
         _.wallpaper = wlp;
     }
 
-    gfx_t* screen = _.screen;
+    gfx_t *screen = _.screen;
     mgr_invalid_screen(0, 0, screen->width, screen->height);
 }
 
 void resx_loading()
 {
-    const char* resx = RESX;
+    const char *resx = RESX;
     resx_cursor(resx);
     resx_apps(resx);
     resx_fonts(resx);

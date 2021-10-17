@@ -1,6 +1,6 @@
 /*
  *      This file is part of the KoraOS project.
- *  Copyright (C) 2015-2019  <Fabien Bavent>
+ *  Copyright (C) 2015-2021  <Fabien Bavent>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as
@@ -89,9 +89,9 @@ const char *eventName[] = {
 };
 
 
-LIBAPI gfx_t* gfx_create_wns(int width, int height, int uid);
+LIBAPI gfx_t *gfx_create_wns(int width, int height, int uid);
 
-window_t *window_create(cuser_t* usr, int width, int height)
+window_t *window_create(cuser_t *usr, int width, int height)
 {
     char tmp[16];
     window_t *win = malloc(sizeof(window_t));
@@ -115,7 +115,7 @@ window_t *window_create(cuser_t* usr, int width, int height)
     win->app = app;
     app->win = win; // TODO -- Multiple window per application !?
 
-    mitem_t* item = malloc(sizeof(mitem_t));
+    mitem_t *item = malloc(sizeof(mitem_t));
     item->color = win->color;
     item->text = NULL;
     item->data = app;
@@ -278,4 +278,3 @@ void window_focus(window_t *win)
     mtx_unlock(&_.lock);
     mgr_invalid_screen(_.win_active->x, _.win_active->y, _.win_active->w, _.win_active->h);
 }
-

@@ -1,6 +1,6 @@
 /*
  *      This file is part of the KoraOS project.
- *  Copyright (C) 2015-2019  <Fabien Bavent>
+ *  Copyright (C) 2015-2021  <Fabien Bavent>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as
@@ -28,9 +28,9 @@
 #  undef offsetof
 #  define offsetof(t,m)   ((size_t)&(((t*)0)->m))
 #  define itemof(p,t,m)   ((t*)itemof_((p), offsetof(t,m)))
-static inline void* itemof_(void* ptr, int off)
+static inline void *itemof_(void *ptr, int off)
 {
-    return ptr ? (char*)ptr - off : 0;
+    return ptr ? (char *)ptr - off : 0;
 }
 #endif
 
@@ -39,15 +39,15 @@ typedef struct llnode llnode_t;
 
 /* Doubled linked list head */
 struct llhead {
-    llnode_t* first_;
-    llnode_t* last_;
+    llnode_t *first_;
+    llnode_t *last_;
     int count_;
 };
 
 /* Doubled linked list node */
 struct llnode {
-    llnode_t* prev_;
-    llnode_t* next_;
+    llnode_t *prev_;
+    llnode_t *next_;
 };
 
 #define INIT_LLHEAD  {NULL,NULL,0}
@@ -70,7 +70,7 @@ struct llnode {
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
 /* Push an element at the front of a linked list */
-static inline void ll_push_front(llhead_t* list, llnode_t* node)
+static inline void ll_push_front(llhead_t *list, llnode_t *node)
 {
     // assert(node->prev_ == NULL);
     // assert(node->next_ == NULL);
@@ -88,7 +88,7 @@ static inline void ll_push_front(llhead_t* list, llnode_t* node)
 }
 
 /* Push an element at the end of a linked list */
-static inline void ll_push_back(llhead_t* list, llnode_t* node)
+static inline void ll_push_back(llhead_t *list, llnode_t *node)
 {
     // assert(node->prev_ == NULL);
     // assert(node->next_ == NULL);
@@ -106,9 +106,9 @@ static inline void ll_push_back(llhead_t* list, llnode_t* node)
 }
 
 /* Return and remove an element from the start of a linked list */
-static inline llnode_t* ll_pop_front(llhead_t* list)
+static inline llnode_t *ll_pop_front(llhead_t *list)
 {
-    llnode_t* first = list->first_;
+    llnode_t *first = list->first_;
 
     assert(first == NULL || first->prev_ == NULL);
     if (first == NULL)
@@ -131,9 +131,9 @@ static inline llnode_t* ll_pop_front(llhead_t* list)
 }
 
 /* Return and remove an element from the end of a linked list */
-static inline llnode_t* ll_pop_back(llhead_t* list)
+static inline llnode_t *ll_pop_back(llhead_t *list)
 {
-    llnode_t* last = list->last_;
+    llnode_t *last = list->last_;
 
     assert(last == NULL || last->next_ == NULL);
     if (last == NULL)
@@ -156,10 +156,10 @@ static inline llnode_t* ll_pop_back(llhead_t* list)
 }
 
 /* Remove an item from the linked list, without checking presence or not */
-static inline void ll_remove(llhead_t* list, llnode_t* node)
+static inline void ll_remove(llhead_t *list, llnode_t *node)
 {
 #if !defined(NDEBUG)
-    struct llnode* w = node;
+    struct llnode *w = node;
     while (w->prev_)
         w = w->prev_;
     assert(w == list->first_);
@@ -190,25 +190,25 @@ static inline void ll_remove(llhead_t* list, llnode_t* node)
     --list->count_;
 }
 
-static inline bool ll_contains(llhead_t* list, llnode_t* node)
+static inline bool ll_contains(llhead_t *list, llnode_t *node)
 {
     if (list->first_ == NULL)
         return false;
-    struct llnode* w = list->first_;
+    struct llnode *w = list->first_;
     while (w != node && w->next_)
         w = w->next_;
     return w == node;
 }
 
-static inline llnode_t* ll_index_(llhead_t* list, int idx)
+static inline llnode_t *ll_index_(llhead_t *list, int idx)
 {
-    llnode_t* node = list->first_;
+    llnode_t *node = list->first_;
     while (node && idx--)
         node = node->next_;
     return node;
 }
 
-static inline void llist_init(llhead_t* list)
+static inline void llist_init(llhead_t *list)
 {
     list->first_ = list->last_ = NULL;
     list->count_ = 0;
@@ -216,7 +216,7 @@ static inline void llist_init(llhead_t* list)
 
 #define MAX_ELMTS 2000
 
-static inline bool quick_sort(int* arr, int elmts)
+static inline bool quick_sort(int *arr, int elmts)
 {
     int piv, beg[MAX_ELMTS], end[MAX_ELMTS], i = 0, L, R;
 
@@ -244,23 +244,22 @@ static inline bool quick_sort(int* arr, int elmts)
             end[i + 1] = end[i];
             end[i] = L;
             i++;
-        }
-        else
+        } else
             i--;
     }
     return true;
 }
 
-static inline bool llist_check(llhead_t* list)
+static inline bool llist_check(llhead_t *list)
 {
-    llnode_t* node = list->first_;
+    llnode_t *node = list->first_;
     if (node == NULL)
         return list->count_ == 0;
     if (node->prev_)
         return false;
     int i = 0;
     while (node->next_) {
-        llnode_t* next = node->next_;
+        llnode_t *next = node->next_;
         ++i;
         if (node->prev_ != node)
             return false;
@@ -271,9 +270,9 @@ static inline bool llist_check(llhead_t* list)
     return list->count_ == i;
 }
 
-static inline void llist_swap(llhead_t* list, llnode_t* a, llnode_t* b)
+static inline void llist_swap(llhead_t *list, llnode_t *a, llnode_t *b)
 {
-    llnode_t* tmp;
+    llnode_t *tmp;
 
     tmp = a->next_;
     a->next_ = b->next_;
@@ -300,7 +299,7 @@ static inline void llist_swap(llhead_t* list, llnode_t* a, llnode_t* b)
         list->first_ = b;
 }
 
-static inline void llist_insert_sort(llhead_t* list, llnode_t* node, int off, int(*compare)(void*, void*))
+static inline void llist_insert_sort(llhead_t *list, llnode_t *node, int off, int(*compare)(void *, void *))
 {
     /* if list is empty */
     if (list->first_ == NULL) {
@@ -321,7 +320,7 @@ static inline void llist_insert_sort(llhead_t* list, llnode_t* node, int off, in
         return;
     }
 
-    llnode_t* cursor = list->first_;
+    llnode_t *cursor = list->first_;
     /* locate the node after which the node is to be inserted */
     while (cursor->next_ != NULL && compare(itemof_(cursor->next_, off), itemof_(node, off)) < 0)
         cursor = cursor->next_;
@@ -338,14 +337,14 @@ static inline void llist_insert_sort(llhead_t* list, llnode_t* node, int off, in
 
 
 
-static inline void llist_sort(llhead_t* list, int off, int (*compare)(void*, void*))
+static inline void llist_sort(llhead_t *list, int off, int (*compare)(void *, void *))
 {
     /* Initialize 'sorted' double linked list */
     llhead_t sorted = INIT_LLHEAD;
 
     /* Traverse and reinsert nodes on sorted list */
-    llnode_t* next;
-    for (llnode_t* node = list->first_; node != NULL; node = next) {
+    llnode_t *next;
+    for (llnode_t *node = list->first_; node != NULL; node = next) {
         /* store for next iteration */
         next = node->next_;
         /* Insert node into sorted list */

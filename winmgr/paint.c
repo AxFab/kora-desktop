@@ -1,6 +1,6 @@
 /*
  *      This file is part of the KoraOS project.
- *  Copyright (C) 2015-2019  <Fabien Bavent>
+ *  Copyright (C) 2015-2021  <Fabien Bavent>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as
@@ -22,7 +22,7 @@
 #include <math.h>
 
 
-static void gr_shadow_corner(gfx_t* screen, int size, int sx, int ex, int sy, int ey, int mx, int my, int alpha)
+static void gr_shadow_corner(gfx_t *screen, int size, int sx, int ex, int sy, int ey, int mx, int my, int alpha)
 {
     for (int i = sy; i < ey; ++i)
         for (int j = sx; j < ex; ++j) {
@@ -37,9 +37,9 @@ static void gr_shadow_corner(gfx_t* screen, int size, int sx, int ex, int sy, in
         }
 }
 
-void gr_shadow(gfx_t* screen, gfx_clip_t* rect, int size, int alpha)
+void gr_shadow(gfx_t *screen, gfx_clip_t *rect, int size, int alpha)
 {
-    int* grad = malloc((size + 1) * sizeof(int));
+    int *grad = malloc((size + 1) * sizeof(int));
     for (int i = 0; i < size + 1; ++i)
         grad[i] = (1.0 - sqrt(i / (float)size)) * (float)alpha;
 
@@ -89,22 +89,22 @@ void gr_shadow(gfx_t* screen, gfx_clip_t* rect, int size, int alpha)
     free(grad);
 }
 
-void gr_write(gfx_t* screen, int face, float sizeInPts, const char* str, gfx_clip_t* clip, uint32_t color, int flags)
+void gr_write(gfx_t *screen, int face, float sizeInPts, const char *str, gfx_clip_t *clip, uint32_t color, int flags)
 {
     if (face == 0 && sizeInPts == 20)
         face = 2;
     else if (face == 0 && sizeInPts == 14)
         face = 1;
-    gfx_font_t* font = _.fontFaces[face];
+    gfx_font_t *font = _.fontFaces[face];
     gfx_text_metrics_t m;
     gfx_mesure_text(font, str, &m);
     int w = clip->right - clip->left;
     int h = clip->bottom - clip->top;
-    gfx_write(screen, font, str, color, clip->left + (w - m.width) / 2, clip->top + (h + m.baseline ) / 2, clip);
+    gfx_write(screen, font, str, color, clip->left + (w - m.width) / 2, clip->top + (h + m.baseline) / 2, clip);
 }
 
 
-const char* month[] = {
+const char *month[] = {
     "JAN", "FEV", "MAR", "APR",
     "MAY", "JUN", "JUL", "AUG",
     "SEP", "OCT", "NOV", "DEC"
@@ -116,7 +116,7 @@ void mgr_invalid_screen(int x, int y, int w, int h)
     _.invalid = true;
 }
 
-void mgr_paint_clock(gfx_t* screen)
+void mgr_paint_clock(gfx_t *screen)
 {
     char tmp[12];
     time_t now = time(NULL);
@@ -160,7 +160,7 @@ void mgr_paint_clock(gfx_t* screen)
     gr_write(screen, FNT_DEFAULT, 20, tmp, &clkClip, 0xffffff, 0);
 }
 
-void mgr_paint(gfx_t* screen)
+void mgr_paint(gfx_t *screen)
 {
     // Background color / wallpaper
     if (_.wallpaper == NULL)
@@ -170,7 +170,7 @@ void mgr_paint(gfx_t* screen)
 
     // Windows
     mtx_lock(&_.lock);
-    window_t* win;
+    window_t *win;
     for ll_each(&_.win_list, win, window_t, node) {
         gfx_clip_t winClip;
         window_position(win, &winClip);
@@ -201,7 +201,7 @@ void mgr_paint(gfx_t* screen)
     // Mouse
     if (_.show_cursor) {
         gfx_clip_t mseClip;
-        gfx_t* cursor = _.cursors[_.cursorIdx];
+        gfx_t *cursor = _.cursors[_.cursorIdx];
         if (cursor == NULL)
             cursor = _.cursors[0];
         if (cursor != NULL) {
@@ -213,4 +213,3 @@ void mgr_paint(gfx_t* screen)
         }
     }
 }
-

@@ -1,6 +1,6 @@
 /*
  *      This file is part of the KoraOS project.
- *  Copyright (C) 2015  <Fabien Bavent>
+ *  Copyright (C) 2015-2021  <Fabien Bavent>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as
@@ -28,21 +28,21 @@
 #include <stdarg.h>
 #include <time.h>
 
-gum_window_t* win;
+gum_window_t *win;
 gum_cell_t *root;
 gum_skins_t *skins;
 
 gum_cell_t *user;
-gum_cell_t*users;
-gum_cell_t*ctx_lang;
-gum_cell_t*lbl_clock;
+gum_cell_t *users;
+gum_cell_t *ctx_lang;
+gum_cell_t *lbl_clock;
 
-gum_cell_t*selected_user;
+gum_cell_t *selected_user;
 char *selected_pwd;
 
 void load_users();
 
-void on_select(gum_window_t* win, gum_cell_t *cell, int event)
+void on_select(gum_window_t *win, gum_cell_t *cell, int event)
 {
     gum_cell_t *usr = users->first;
     while (usr) {
@@ -71,7 +71,7 @@ void on_select(gum_window_t* win, gum_cell_t *cell, int event)
     // gum_invalid_measure(win, users);
 }
 
-void *start_auth(gum_window_t* win, void *arg)
+void *start_auth(gum_window_t *win, void *arg)
 {
     if (selected_user == NULL) {
         free(selected_pwd);
@@ -167,7 +167,7 @@ void on_lang(gum_window_t *win, gum_cell_t *cell, int event)
 
 int last = 0;
 
-void on_tick(gum_window_t* win, gum_cell_t *cell, int event)
+void on_tick(gum_window_t *win, gum_cell_t *cell, int event)
 {
     char buf[12];
     int tz_off = 2 * MIN_PER_HOUR;
@@ -184,7 +184,7 @@ void on_tick(gum_window_t* win, gum_cell_t *cell, int event)
 
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
-gum_window_t*gum_open_surface(gfx_t *gfx);
+gum_window_t *gum_open_surface(gfx_t *gfx);
 
 /* Graphical User-interface Module */
 int main(int argc, char **argv, char **env)
@@ -229,5 +229,3 @@ int main(int argc, char **argv, char **env)
     gum_destroy_skins(skins);
     return EXIT_SUCCESS;
 }
-
-

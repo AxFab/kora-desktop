@@ -1,6 +1,6 @@
 /*
  *      This file is part of the KoraOS project.
- *  Copyright (C) 2015-2019  <Fabien Bavent>
+ *  Copyright (C) 2015-2021  <Fabien Bavent>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as
@@ -20,9 +20,9 @@
 #include "wns.h"
 #include "winmgr.h"
 
-static cuser_t* wns_fetch_session(SOCKET sock, void* key, int len, int secret)
+static cuser_t *wns_fetch_session(SOCKET sock, void *key, int len, int secret)
 {
-    cuser_t* usr;
+    cuser_t *usr;
     mtx_lock(&_._cnx_lk);
     usr = hmp_get(&_._cnx, key, len);
     if (usr == NULL) {
@@ -44,17 +44,16 @@ static cuser_t* wns_fetch_session(SOCKET sock, void* key, int len, int secret)
         memcpy(&usr->cnx.remote, key, len);
         hmp_put(&_._cnx, key, len, usr);
 
-    }
-    else if (secret == 0 || usr->cnx.secret != secret)
+    } else if (secret == 0 || usr->cnx.secret != secret)
         usr = NULL;
 done:
     mtx_unlock(&_._cnx_lk);
     return usr;
 }
 
-static window_t* wns_window(cuser_t* usr, int uid)
+static window_t *wns_window(cuser_t *usr, int uid)
 {
-    window_t* win;
+    window_t *win;
     for ll_each(&usr->wins, win, window_t, unode) {
         if (win->id == uid)
             return win;
@@ -62,9 +61,9 @@ static window_t* wns_window(cuser_t* usr, int uid)
     return NULL;
 }
 
-static void wns_handler(cuser_t* usr, wns_msg_t* msg, wns_msg_t* res)
+static void wns_handler(cuser_t *usr, wns_msg_t *msg, wns_msg_t *res)
 {
-    window_t* win;
+    window_t *win;
     switch (msg->request) {
     case WNS_OPEN:
         win = window_create(usr, msg->param, msg->param2);
@@ -89,7 +88,7 @@ static void wns_handler(cuser_t* usr, wns_msg_t* msg, wns_msg_t* res)
         mtx_lock(&_.lock);
         win = wns_window(usr, msg->winhdl);
         if (win) {
-            gfx_flip(win->gfx, (void*)msg->param3);
+            gfx_flip(win->gfx, (void *)msg->param3);
             gfx_clip_t rect;
             window_position(win, &rect);
             mgr_invalid_screen(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
@@ -116,7 +115,7 @@ void wns_service()
     SOCKET sock;
     struct sockaddr_in server;
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = htonl(INADDR_ANY);
+    server.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     server.sin_port = htons(WNS_PORT);
 
     hmp_init(&_._cnx, 16);
@@ -129,7 +128,7 @@ void wns_service()
         return;
     }
 
-    int ret = bind(sock, (void*)&server, sizeof(server));
+    int ret = bind(sock, (void *)&server, sizeof(server));
     if (ret == SOCKET_ERROR) {
         fprintf(stderr, "Bind failed with error code : %d\n", WSAGetLastError());
         return;
@@ -142,7 +141,7 @@ void wns_service()
         struct sockaddr_in remote;
         int rlen = sizeof(remote);
         // printf("Wait cnx\n");
-        int ret = recvfrom(sock, (char *)&msg, sizeof(msg), 0, (struct sockaddr*)&remote, &rlen);
+        int ret = recvfrom(sock, (char *)&msg, sizeof(msg), 0, (struct sockaddr *)&remote, &rlen);
         // printf("Get cnx %d\n", ret);
         if (ret == SOCKET_ERROR) {
             fprintf(stderr, "recvfrom() failed with error code : %d\n", WSAGetLastError());
@@ -150,7 +149,7 @@ void wns_service()
         }
 
         res.request = -1;
-        cuser_t* usr = wns_fetch_session(sock, &remote, rlen, msg.request == WNS_HELLO ? 0 : msg.secret);
+        cuser_t *usr = wns_fetch_session(sock, &remote, rlen, msg.request == WNS_HELLO ? 0 : msg.secret);
         if (usr != NULL) {
             wns_handler(usr, &msg, &res);
             res.secret = usr->cnx.secret;
@@ -161,4 +160,3 @@ void wns_service()
 
     closesocket(sock);
 }
-
