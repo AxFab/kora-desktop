@@ -35,13 +35,11 @@ CFLAGS_g += $(CFLAGS) -fPIC -fno-builtin
 ifneq ($(sysdir),)
 CFLAGS_g += -I$(sysdir)/include
 LFLAGS_g += -L$(sysdir)/lib
+LFLAGS_g += -Wl,-rpath-link,$(sysdir)/lib
 endif
 
-LFLAGS_lg = $(LFLAGS_g) -lgfx -lpng -lz -lm
-LFLAGS_wm = $(LFLAGS_g) -lgfx -lpng -lz -lm
-
-# CFLAGS += $(shell $(PKC) --cflags lgfx freetype)
-# LFLAGS += $(shell $(PKC) --libs lgfx freetype) -lm
+LFLAGS_lg = $(LFLAGS_g) -lgfx
+LFLAGS_wm = $(LFLAGS_g) -lgfx -lm
 
 
 ifeq ($(DISTO),linux)
